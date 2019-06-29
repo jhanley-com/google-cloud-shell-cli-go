@@ -45,11 +45,6 @@ func process_cmdline() {
 			continue
 		}
 
-		if arg == "-adc" || arg == "--adc" {
-			config.UseAdcCredentials = true
-			continue
-		}
-
 		if arg == "-auth" || arg == "--auth" {
 			config.Flags.Auth = true
 			continue
@@ -181,7 +176,6 @@ func cmd_help() {
 	fmt.Println("  cloudinfo download src_file dst_file - Download from Cloud Shell to local file")
 	fmt.Println("")
 	fmt.Println("--debug - Turn on debug output")
-	fmt.Println("--adc   - Use Cloud SDK Application Default Credentials")
 	fmt.Println("--auth  - (re)Authenticate ignoring user_credentials.json")
 	fmt.Println("--login - Specify an email address as a login hint")
 }
