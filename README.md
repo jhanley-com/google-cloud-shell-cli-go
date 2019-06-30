@@ -29,11 +29,19 @@ Usage: cloudshell [command]
 
 This program supports Putty for the SSH client. Download https://www.putty.org/
 
-You will need to setup the SSH keys for Cloud Shell. This requires the "alpha" version of the Google Cloud SDK:
+You will need to setup the SSH keys for Cloud Shell. This requires the "alpha" version of the Google Cloud SDK.
 
-1) Install the alpha components: <code>gcloud components install beta</code>
-2) Update the Google Cloud SDK: <code>gcloud components update</code>
-3) Create the SSH key pair: <code>gcloud alpha cloud-shell ssh --dry-run</code>
+Run these commands in an "Elevated Command Prompt":
+
+1) Install the alpha components: <code>gcloud components install alpha</code>
+2) Install the beta components: <code>gcloud components install beta</code>
+3) Update the Google Cloud SDK: <code>gcloud components update</code>
+
+Exit the Elevated Command Prompt after updating the Cloud SDK.
+
+Create the SSH key pairs if they do not exist. This command will check and if necessary create the key pairs and install the public key into your Cloud Shell instance.
+
+<code>gcloud alpha cloud-shell ssh --dry-run</code>
 
 Install the Go dependencies:
 <pre>
