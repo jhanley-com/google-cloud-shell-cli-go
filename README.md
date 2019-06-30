@@ -16,6 +16,7 @@ Usage: cloudshell [command]
   cloudshell                            - display Cloud Shell information
   cloudshell info                       - display Cloud Shell information
   cloudshell putty                      - connect to Cloud Shell with Putty
+  cloudshell winssh                     - connect to Cloud Shell with Windows SSH
   cloudshell exec "command"             - Execute remote command on Cloud Shell
   cloudshell upload src_file dst_file   - Upload local file to Cloud Shell
   cloudshell download src_file dst_file - Download from Cloud Shell to local file
@@ -64,6 +65,11 @@ cloudshell.exe info
 Launch Putty and connect to Cloud Shell:
 <pre>
 cloudshell.exe putty
+</pre>
+
+Launch Windows 10 SSH and connect to Cloud Shell:
+<pre>
+cloudshell.exe winssh
 </pre>
 
 Upload a file to Cloud Shell:
