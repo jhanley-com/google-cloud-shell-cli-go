@@ -286,6 +286,10 @@ func call_cloud_shell(accessToken string) {
 		exec_putty(params)
 	}
 
+	if config.Command == CMD_WINSSH {
+		exec_winssh(params)
+	}
+
 	if config.Command == CMD_EXEC {
 		exec_command(params)
 	}

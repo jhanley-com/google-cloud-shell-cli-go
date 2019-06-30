@@ -5,8 +5,10 @@ import (
 	"os/exec"
 )
 
-func exec_putty(params CloudShellEnv) {
-	key := env_get_ssh_ppk()
+var path_winssh =  "C:/Windows/System32/OpenSSH/ssh.exe"
+
+func exec_winssh(params CloudShellEnv) {
+	key := env_get_ssh_pkey()
 
 	if key == "" {
 		return
@@ -25,7 +27,7 @@ func exec_putty(params CloudShellEnv) {
 		fmt.Println(sshUrl)
 	}
 
-	cmd := exec.Command("putty.exe", "-t", "-P", sshPort, "-i", key, sshUrl)
+	cmd := exec.Command("cmd.exe", "/C", "start", path_winssh, sshUrl, "-p", sshPort, "-i", key)
 
 	err := cmd.Start()
 
