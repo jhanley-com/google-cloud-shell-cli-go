@@ -12,13 +12,13 @@ The first time you execute this program, you will be prompted to authenticate wi
 Note: This program is written for Windows. I have not yet ported it to Linux or Mac OS. Volunteers?
 
 <pre>
-Usage: cloudinfo [command]
-  cloudinfo                            - display Cloud Shell information
-  cloudinfo info                       - display Cloud Shell information
-  cloudinfo putty                      - connect to Cloud Shell with Putty
-  cloudinfo exec "command"             - Execute remote command on Cloud Shell
-  cloudinfo upload src_file dst_file   - Upload local file to Cloud Shell
-  cloudinfo download src_file dst_file - Download from Cloud Shell to local file
+Usage: cloudshell [command]
+  cloudshell                            - display Cloud Shell information
+  cloudshell info                       - display Cloud Shell information
+  cloudshell putty                      - connect to Cloud Shell with Putty
+  cloudshell exec "command"             - Execute remote command on Cloud Shell
+  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell
+  cloudshell download src_file dst_file - Download from Cloud Shell to local file
 
 --debug - Turn on debug output
 --auth  - (re)Authenticate ignoring user_credentials.json
