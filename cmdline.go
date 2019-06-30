@@ -167,13 +167,13 @@ func process_cmdline() {
 }
 
 func cmd_help() {
-	fmt.Println("Usage: cloudinfo [command]")
-	fmt.Println("  cloudinfo                            - display Cloud Shell information")
-	fmt.Println("  cloudinfo info                       - display Cloud Shell information")
-	fmt.Println("  cloudinfo putty                      - connect to Cloud Shell with Putty")
-	fmt.Println("  cloudinfo exec \"command\"             - Execute remote command on Cloud Shell")
-	fmt.Println("  cloudinfo upload src_file dst_file   - Upload local file to Cloud Shell")
-	fmt.Println("  cloudinfo download src_file dst_file - Download from Cloud Shell to local file")
+	fmt.Println("Usage: cloudshell [command]")
+	fmt.Println("  cloudshell                            - display Cloud Shell information")
+	fmt.Println("  cloudshell info                       - display Cloud Shell information")
+	fmt.Println("  cloudshell putty                      - connect to Cloud Shell with Putty")
+	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
+	fmt.Println("  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell")
+	fmt.Println("  cloudshell download src_file dst_file - Download from Cloud Shell to local file")
 	fmt.Println("")
 	fmt.Println("--debug - Turn on debug output")
 	fmt.Println("--auth  - (re)Authenticate ignoring user_credentials.json")
