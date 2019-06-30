@@ -24,3 +24,66 @@ Usage: cloudshell [command]
 --auth  - (re)Authenticate ignoring user_credentials.json
 --login - Specify an email address as a login hint
 </pre>
+
+# Getting Started
+
+This program supports Putty for the SSH client. Download https://www.putty.org/
+
+You will need to setup the SSH keys for Cloud Shell. This requires the "alpha" version of the Google Cloud SDK:
+
+1) Install the alpha components: <code>gcloud components install beta</code>
+2) Update the Google Cloud SDK: <code>gcloud components update</code>
+3) Create the SSH key pair: <code>gcloud alpha cloud-shell ssh --dry-run</code>
+
+Install the Go dependencies:
+<pre>
+go get github.com/kirinlabs/HttpRequest
+go get github.com/pkg/sftp
+go get golang.org/x/crypto/ssh
+</pre>
+
+Build the program:
+<pre>
+go build -o cloudshell.exe
+</pre>
+
+## Examples
+Run the program and display information about your Google Cloud Shell instance:
+<pre>
+cloudshell.exe info
+</pre>
+
+Launch Putty and connect to Cloud Shell:
+<pre>
+cloudshell.exe putty
+</pre>
+
+Upload a file to Cloud Shell:
+The local file "local_file.txt" will be copied to the current working directory in Google Cloud Shell.
+<pre>
+cloudshell.exe upload local_file.txt remote_file.txt
+</pre>
+
+Quick file copy:
+This command copies the local file "myfile.txt" to the Cloud Shell default working directory with the same file name.
+<pre>
+cloudshell.exe upload myfile.txt
+</pre>
+
+Copy a file to a specic location:
+<pre>
+cloudshell.exe upload local_file.txt /tmp/remote_file.txt
+</pre>
+
+What is the current Cloud Shell working directory?
+<pre>
+cloudshell.exe exec "pwd"
+</pre>
+
+Display the Cloud Shell current working directory files (directory listing):
+<pre>
+cloudshell.exe exec "ls -l"
+</pre>
+
+#### Note: The remote command must be enclosed in quotation marks
+Remote commands that change the environment work but have no effect on the next command. You can combine commands in one session: <code>cloudshell exec "cd /home; cat testfile.txt"</code>
