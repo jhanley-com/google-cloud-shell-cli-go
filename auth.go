@@ -437,11 +437,13 @@ func get_tokens() (string, string, error) {
 	// a web browser to authenticate with Google
 	//************************************************************
 
+/*
 	if isWindows() == false {
 		err := errors.New("Cannot launch Google Chrome on Linux")
 		fmt.Println("Error:", err)
 		return "", "", err
 	}
+*/
 
 	secrets, err := loadClientSecrets(config.ClientSecretsFile)
 
@@ -462,9 +464,13 @@ func get_tokens() (string, string, error) {
 	url += "&redirect_uri=http://localhost:9000"
 	//************************************************************
 
-	cmd := exec.Command(CHROME, url)
+	if isWindows() == true {
+		cmd := exec.Command(CHROME, url)
 
-	err = cmd.Start()
+		err = cmd.Start()
+	} else {
+		err = exec.Command("xdg-open", url).Start()
+	}
 
 	if err != nil {
 		fmt.Println(err)
@@ -481,7 +487,13 @@ func get_tokens() (string, string, error) {
 
 	fmt.Println("Web server starting")
 
-	out, err := exec.Command("python", "webserver.py").Output()
+	var out []byte
+
+	if isWindows() == true {
+		out, err = exec.Command("python", "webserver.py").Output()
+	} else {
+		out, err = exec.Command("python3", "webserver.py").Output()
+	}
 
 	if err != nil {
 		fmt.Println("Error: Web server failed to start")

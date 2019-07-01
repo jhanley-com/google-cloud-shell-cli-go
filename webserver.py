@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qsl
 
 # The listening port can be anything but must be available
-web_port: int = 9000
+web_port = int(9000)
 
 flag_continue = True
 

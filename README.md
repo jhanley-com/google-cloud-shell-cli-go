@@ -9,7 +9,11 @@ Once you have OAuth 2.0 Client Credentials, edit the the file config.json to spe
 
 The first time you execute this program, you will be prompted to authenticate with Google. These credentials are saved in the file user_credentials.json. In the module auth.go, I show how to store credentials and refresh the access token.
 
-Note: This program is written for Windows. I have not yet ported it to Linux or Mac OS. Volunteers?
+Notes:
+1) This program was orginally written for Windows.
+2) I have ported this program to run in a Linux desktop terminal window. I have not figured out to launch a web browser from an SSH terminal window.
+
+#### I have not ported this program to Mac OS or any other platforms. Volunteers?
 
 <pre>
 Usage: cloudshell [command]
