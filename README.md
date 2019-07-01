@@ -21,6 +21,7 @@ Usage: cloudshell [command]
   cloudshell info                       - display Cloud Shell information
   cloudshell putty                      - connect to Cloud Shell with Putty
   cloudshell winssh                     - connect to Cloud Shell with Windows SSH
+  cloudshell ssh                        - connect to Cloud Shell with Linux SSH
   cloudshell exec "command"             - Execute remote command on Cloud Shell
   cloudshell upload src_file dst_file   - Upload local file to Cloud Shell
   cloudshell download src_file dst_file - Download from Cloud Shell to local file
