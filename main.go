@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 // This is the file where User Credentails are saved after authorization
@@ -24,7 +25,18 @@ func main() {
 	err := init_config()
 
 	if err != nil {
-		return
+		os.Exit(1)
+	}
+
+	//************************************************************
+	//
+	//************************************************************
+
+	err = check_os()
+
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
 
 	//************************************************************
@@ -47,13 +59,16 @@ func main() {
 	accessToken, _, err = get_tokens()
 
 	if err != nil {
-		return
+		os.Exit(1)
 	}
 
 	if accessToken == "" {
 		fmt.Println("Error: Empty Access Token")
-		return
+		os.Exit(1)
 	}
 
+	// FIX - return error numbers so that scripts/tools can detect errors
 	call_cloud_shell(accessToken)
+
+	os.Exit(0)
 }

@@ -8,9 +8,9 @@ import (
 var path_winssh =  "C:/Windows/System32/OpenSSH/ssh.exe"
 
 func exec_winssh(params CloudShellEnv) {
-	key := env_get_ssh_pkey()
+	key, err := env_get_ssh_pkey()
 
-	if key == "" {
+	if err != nil {
 		return
 	}
 
@@ -29,7 +29,7 @@ func exec_winssh(params CloudShellEnv) {
 
 	cmd := exec.Command("cmd.exe", "/C", "start", path_winssh, sshUrl, "-p", sshPort, "-i", key)
 
-	err := cmd.Start()
+	err = cmd.Start()
 
 	if err != nil {
 		fmt.Println(err)

@@ -6,9 +6,9 @@ import (
 )
 
 func exec_putty(params CloudShellEnv) {
-	key := env_get_ssh_ppk()
+	key, err := env_get_ssh_ppk()
 
-	if key == "" {
+	if err != nil {
 		return
 	}
 
@@ -27,7 +27,7 @@ func exec_putty(params CloudShellEnv) {
 
 	cmd := exec.Command("putty.exe", "-t", "-P", sshPort, "-i", key, sshUrl)
 
-	err := cmd.Start()
+	err = cmd.Start()
 
 	if err != nil {
 		fmt.Println(err)

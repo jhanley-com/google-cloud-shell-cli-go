@@ -13,6 +13,7 @@ const (
 	CMD_INFO = iota
 	CMD_PUTTY
 	CMD_WINSSH
+	CMD_SSH
 	CMD_EXEC
 	CMD_UPLOAD
 	CMD_DOWNLOAD
@@ -95,10 +96,25 @@ func process_cmdline() {
 			config.Command = CMD_INFO
 
 		case "putty":
-			config.Command = CMD_PUTTY
+			if isWindows() == true {
+				config.Command = CMD_PUTTY
+			} else {
+				fmt.Println("Error: this command is only supported on Windows")
+			}
 
 		case "winssh":
-			config.Command = CMD_WINSSH
+			if isWindows() == true {
+				config.Command = CMD_WINSSH
+			} else {
+				fmt.Println("Error: this command is only supported on Windows")
+			}
+
+		case "ssh":
+			if isWindows() == false {
+				config.Command = CMD_SSH
+			} else {
+				fmt.Println("Error: this command is only supported on Linux")
+			}
 
 		case "exec":
 			if len(args) < 2 {
@@ -164,7 +180,11 @@ func process_cmdline() {
 			fmt.Println("DstFile:", config.DstFile)
 
 		default:
-			fmt.Println("Error: expected a command (info, putty, winssh, exec, upload, download)")
+			if isWindows() == true {
+				fmt.Println("Error: expected a command (info, putty, winssh, exec, upload, download)")
+			} else {
+				fmt.Println("Error: expected a command (info, ssh, exec, upload, download)")
+			}
 			os.Exit(1)
 		}
 	}
@@ -174,8 +194,12 @@ func cmd_help() {
 	fmt.Println("Usage: cloudshell [command]")
 	fmt.Println("  cloudshell                            - display Cloud Shell information")
 	fmt.Println("  cloudshell info                       - display Cloud Shell information")
-	fmt.Println("  cloudshell putty                      - connect to Cloud Shell with Putty")
-	fmt.Println("  cloudshell winssh                     - connect to Cloud Shell with Windows SSH")
+	if isWindows() == true {
+		fmt.Println("  cloudshell putty                      - connect to Cloud Shell with Putty")
+		fmt.Println("  cloudshell winssh                     - connect to Cloud Shell with Windows SSH")
+	} else {
+		fmt.Println("  cloudshell ssh                        - connect to Cloud Shell with Linux SSH")
+	}
 	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
 	fmt.Println("  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell")
 	fmt.Println("  cloudshell download src_file dst_file - Download from Cloud Shell to local file")

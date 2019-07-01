@@ -11,9 +11,9 @@ import (
 )
 
 func sftp_download(params CloudShellEnv) {
-	file := env_get_ssh_pkey()
+	file, err := env_get_ssh_pkey()
 
-	if file == "" {
+	if err != nil {
 		fmt.Println("Error: Cannot get SSH private key file")
 		return
 	}
@@ -83,9 +83,9 @@ func sftp_download(params CloudShellEnv) {
 }
 
 func sftp_upload(params CloudShellEnv) {
-	file := env_get_ssh_pkey()
+	file, err := env_get_ssh_pkey()
 
-	if file == "" {
+	if err != nil {
 		fmt.Println("Error: Cannot get SSH private key file")
 		return
 	}

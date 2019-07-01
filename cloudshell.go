@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"os"
 	"time"
 	"github.com/kirinlabs/HttpRequest"
 )
@@ -156,74 +156,68 @@ func cloudshell_start(accessToken string) {
 	return
 }
 
-func env_get_ssh_pkey() string {
+func env_get_ssh_pkey() (string, error) {
 	//*************************************************************
 	// Return the Google Cloud SSH Key for the current Windows User
 	//*************************************************************
 
-	home_drive := os.Getenv("HOMEDRIVE")
-	home_path := os.Getenv("HOMEPATH")
+	path, err := get_home_directory()
 
-	if home_drive == "" {
-		fmt.Println("Error: Missing Environment Variable: HOMEDRIVE")
-		return ""
+	if err != nil {
+		fmt.Println(err)
+		return "", err
 	}
 
-	if home_path == "" {
-		fmt.Println("Error: Missing Environment Variable: HOMEPATH")
-		return ""
+	if isWindows() == true {
+		path += "\\.ssh\\google_compute_engine"
+	} else {
+		path += "/.ssh/google_compute_engine"
 	}
-
-	path := home_drive + home_path
-
-	path += "\\.ssh\\google_compute_engine"
 
 	if config.Debug == true {
 		fmt.Println("Path:", path)
 	}
 
 	if fileExists(path) == false {
-		fmt.Println("Error: Google SSH Key does not exist")
+		err = errors.New("Google SSH Key does not exist")
+		fmt.Println("Error:", err)
 		fmt.Println("File:", path)
-		return ""
+		return "", err
 	}
 
-	return path
+	return path, nil
 }
 
-func env_get_ssh_ppk() string {
+func env_get_ssh_ppk() (string, error) {
 	//*************************************************************
 	// Return the Google Cloud SSH Key for the current Windows User
 	//*************************************************************
 
-	home_drive := os.Getenv("HOMEDRIVE")
-	home_path := os.Getenv("HOMEPATH")
+	path, err := get_home_directory()
 
-	if home_drive == "" {
-		fmt.Println("Error: Missing Environment Variable: HOMEDRIVE")
-		return ""
+	if err != nil {
+		fmt.Println(err)
+		return "", err
 	}
 
-	if home_path == "" {
-		fmt.Println("Error: Missing Environment Variable: HOMEPATH")
-		return ""
+	if isWindows() == true {
+		path += "\\.ssh\\google_compute_engine.ppk"
+	} else {
+		path += "/.ssh/google_compute_engine.ppk"
 	}
-
-	path := home_drive + home_path
-
-	path += "\\.ssh\\google_compute_engine.ppk"
 
 	if config.Debug == true {
 		fmt.Println("Path:", path)
 	}
 
 	if fileExists(path) == false {
-		fmt.Println("Error: Google SSH Key does not exist")
+		err = errors.New("Google SSH Key does not exist")
+		fmt.Println("Error:", err)
 		fmt.Println("File:", path)
-		return ""
+		return "", err
 	}
 
-	return path
+	return path, nil
 }
 
 func call_cloud_shell(accessToken string) {
@@ -262,7 +256,7 @@ func call_cloud_shell(accessToken string) {
 
 		cloudshell_start(accessToken)
 
-		for x := 0; x < 20; x++ {
+		for x := 0; x < 60; x++ {
 			time.Sleep(500 * time.Millisecond)
 
 			params, err = cloud_shell_get_environment(accessToken, flag_info)
@@ -288,6 +282,10 @@ func call_cloud_shell(accessToken string) {
 
 	if config.Command == CMD_WINSSH {
 		exec_winssh(params)
+	}
+
+	if config.Command == CMD_SSH {
+		exec_ssh(params)
 	}
 
 	if config.Command == CMD_EXEC {

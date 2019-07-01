@@ -13,6 +13,8 @@ import (
 )
 
 // Web browser to launch to authenticate
+// This path is valid for Windows x64 only
+// FIX - Test for Windows x86
 var CHROME = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
 
 var ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -196,7 +198,7 @@ func doRefresh(filename string) (string, string, bool) {
 
 	if time.Now().Before(t) {
 		if config.Debug == true {
-			fmt.Println("Saved Token OK")
+			fmt.Println("Saved credentials (Access Token) have not expired")
 		}
 
 		return creds.AccessToken, creds.IDToken, true
@@ -430,23 +432,23 @@ func get_tokens() (string, string, error) {
 		}
 	}
 
+	//************************************************************
+	// FIX - For Linux, this code does not yet support launching
+	// a web browser to authenticate with Google
+	//************************************************************
+
+	if isWindows() == false {
+		err := errors.New("Cannot launch Google Chrome on Linux")
+		fmt.Println("Error:", err)
+		return "", "", err
+	}
+
 	secrets, err := loadClientSecrets(config.ClientSecretsFile)
 
 	if err != nil {
 		fmt.Println(err)
 		return "", "", err
 	}
-
-/*
-	cmd := exec.Command("python", "webserver.py")
-
-	err = cmd.Start()
-
-	if err != nil {
-		fmt.Println(err)
-		return "", "", err
-	}
-*/
 
 	//************************************************************
 	url := ENDPOINT

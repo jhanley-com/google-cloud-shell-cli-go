@@ -3,16 +3,12 @@ package main
 // https://github.com/kirinlabs/HttpRequest
 
 import (
-	// "encoding/json"
-	// "flag"
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net"
-	// "os"
-	// "os/exec"
-	// "time"
-	// "github.com/kirinlabs/HttpRequest"
+	"os"
+	"os/exec"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -36,7 +32,7 @@ func PublicKeyFile(file string) ssh.AuthMethod {
 }
 
 func exec_command(params CloudShellEnv) {
-	file := env_get_ssh_pkey()
+	file, err := env_get_ssh_pkey()
 
 	if file == "" {
 		fmt.Println("Error: Cannot get SSH private key file")
@@ -99,4 +95,38 @@ func exec_command(params CloudShellEnv) {
 
 	fmt.Printf("%s\n", stdoutBuf.String())
 	fmt.Printf("%s\n", stderrBuf.String())
+}
+
+func exec_ssh(params CloudShellEnv) {
+	key, err := env_get_ssh_pkey()
+
+	if err != nil {
+		return
+	}
+
+	sshUsername := params.SshUsername
+	sshHost := params.SshHost
+	sshPort := fmt.Sprint(params.SshPort)
+	sshUrl := sshUsername + "@" + sshHost
+
+	if config.Debug == true {
+		fmt.Println(key)
+		fmt.Println(sshUsername)
+		fmt.Println(sshHost)
+		fmt.Println(sshPort)
+		fmt.Println(sshUrl)
+	}
+
+	cmd := exec.Command("ssh", "-p", sshPort, "-i", key, sshUrl)
+
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
