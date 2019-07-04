@@ -55,6 +55,7 @@ Install the Go dependencies:
 go get github.com/kirinlabs/HttpRequest
 go get github.com/pkg/sftp
 go get golang.org/x/crypto/ssh
+go get golang.org/x/oauth2/google
 </pre>
 
 Build the program:
@@ -65,44 +66,49 @@ go build -o cloudshell.exe
 ## Examples
 Run the program and display information about your Google Cloud Shell instance:
 <pre>
-cloudshell.exe info
+cloudshell info
 </pre>
 
 Launch Putty and connect to Cloud Shell:
 <pre>
-cloudshell.exe putty
+cloudshell putty
 </pre>
 
 Launch Windows 10 SSH and connect to Cloud Shell:
 <pre>
-cloudshell.exe winssh
+cloudshell ssh
+</pre>
+
+Launch Linux SSH and connect to Cloud Shell:
+<pre>
+cloudshell ssh
 </pre>
 
 Upload a file to Cloud Shell:
 The local file "local_file.txt" will be copied to the current working directory in Google Cloud Shell.
 <pre>
-cloudshell.exe upload local_file.txt remote_file.txt
+cloudshell upload local_file.txt remote_file.txt
 </pre>
 
 Quick file copy:
 This command copies the local file "myfile.txt" to the Cloud Shell default working directory with the same file name.
 <pre>
-cloudshell.exe upload myfile.txt
+cloudshell upload myfile.txt
 </pre>
 
 Copy a file to a specic location:
 <pre>
-cloudshell.exe upload local_file.txt /tmp/remote_file.txt
+cloudshell upload local_file.txt /tmp/remote_file.txt
 </pre>
 
 What is the current Cloud Shell working directory?
 <pre>
-cloudshell.exe exec "pwd"
+cloudshell exec "pwd"
 </pre>
 
 Display the Cloud Shell current working directory files (directory listing):
 <pre>
-cloudshell.exe exec "ls -l"
+cloudshell exec "ls -l"
 </pre>
 
 #### Note: The remote command must be enclosed in quotation marks

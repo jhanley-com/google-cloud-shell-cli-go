@@ -1,1 +1,1 @@
-go build -o CloudShell
+go build -o cloudshell
