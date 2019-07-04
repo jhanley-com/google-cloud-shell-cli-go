@@ -20,13 +20,13 @@ Usage: cloudshell [command]
   cloudshell                            - display Cloud Shell information
   cloudshell info                       - display Cloud Shell information
   cloudshell putty                      - connect to Cloud Shell with Putty
-  cloudshell winssh                     - connect to Cloud Shell with Windows SSH
-  cloudshell ssh                        - connect to Cloud Shell with Linux SSH
+  cloudshell ssh                        - connect to Cloud Shell with SSH
   cloudshell exec "command"             - Execute remote command on Cloud Shell
   cloudshell upload src_file dst_file   - Upload local file to Cloud Shell
   cloudshell download src_file dst_file - Download from Cloud Shell to local file
 
 --debug - Turn on debug output
+--adc  -  Use Application Default Credentials - Compute Engine only
 --auth  - (re)Authenticate ignoring user_credentials.json
 --login - Specify an email address as a login hint
 </pre>

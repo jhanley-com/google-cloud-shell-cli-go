@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,12 +11,8 @@ import (
 	"os/exec"
 	"time"
 	"github.com/kirinlabs/HttpRequest"
+	"golang.org/x/oauth2/google"
 )
-
-// Web browser to launch to authenticate
-// This path is valid for Windows x64 only
-// FIX - Test for Windows x86
-var CHROME = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
 
 var ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
 
@@ -408,6 +405,15 @@ func get_email_address(accessToken string) (string, error) {
 
 func get_tokens() (string, string, error) {
 	//************************************************************
+	// Note: Application Default Credentials only work on Compute
+	// Engine when interfacing with Cloud Shell.
+	//************************************************************
+
+	if config.Flags.Adc == true {
+		return get_sa_tokens()
+	}
+
+	//************************************************************
 	//
 	//************************************************************
 
@@ -437,6 +443,25 @@ func get_tokens() (string, string, error) {
 	// a web browser to authenticate with Google
 	//************************************************************
 
+	//************************************************************
+	// The following code requires Python
+	//************************************************************
+
+	python_path, err := exec.LookPath("python3")
+
+	if err != nil {
+		python_path, err = exec.LookPath("python")
+
+		if err != nil {
+			fmt.Println("Error: Cannot find the python program to launch the internal web server for authentication")
+			return "", "", err
+		}
+	}
+
+	if config.Debug == true {
+		fmt.Println("Python Path:", python_path)
+	}
+
 /*
 	if isWindows() == false {
 		err := errors.New("Cannot launch Google Chrome on Linux")
@@ -465,7 +490,17 @@ func get_tokens() (string, string, error) {
 	//************************************************************
 
 	if isWindows() == true {
-		cmd := exec.Command(CHROME, url)
+		chrome, err := FindChromeBrowser()
+
+		var cmd *exec.Cmd
+
+		if err == nil {
+			cmd = exec.Command(chrome, url)
+
+			err = cmd.Start()
+		} else {
+			cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+		}
 
 		err = cmd.Start()
 	} else {
@@ -489,11 +524,7 @@ func get_tokens() (string, string, error) {
 
 	var out []byte
 
-	if isWindows() == true {
-		out, err = exec.Command("python", "webserver.py").Output()
-	} else {
-		out, err = exec.Command("python3", "webserver.py").Output()
-	}
+	out, err = exec.Command(python_path, "webserver.py").Output()
 
 	if err != nil {
 		fmt.Println("Error: Web server failed to start")
@@ -620,4 +651,66 @@ func get_tokens() (string, string, error) {
 	// debug_displayIDToken(creds.AccessToken, creds.IDToken)
 
 	return creds.AccessToken, creds.IDToken, nil
+}
+
+func get_sa_tokens() (string, string, error) {
+	//************************************************************
+	//
+	//************************************************************
+
+	scope := "https://www.googleapis.com/auth/cloud-platform"
+
+	//************************************************************
+	//
+	//************************************************************
+
+       	ctx := context.Background()
+
+	//************************************************************
+	//
+	//************************************************************
+
+	creds, err := google.FindDefaultCredentials(ctx, scope)
+
+	if err != nil {
+		fmt.Println(err)
+		return "", "", err
+	}
+
+	//************************************************************
+	//
+	//************************************************************
+
+	token, err := creds.TokenSource.Token()
+
+	if err != nil {
+		fmt.Println(err)
+		return "", "", err
+	}
+
+	//************************************************************
+	//
+	//************************************************************
+
+	return token.AccessToken, "", nil
+}
+
+func FindChromeBrowser() (string, error) {
+	// Web browser to launch to authenticate
+	// This path is valid for Windows x64 only
+	// FIX - Test for Windows x86
+	var chrome1 = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+	var chrome2 = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+
+	if fileExists(chrome1) {
+		return chrome1, nil
+	}
+
+	if fileExists(chrome2) {
+		return chrome2, nil
+	}
+
+	err := errors.New("Cannot find Google Chrome Browser")
+
+	return "", err
 }

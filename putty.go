@@ -9,6 +9,7 @@ func exec_putty(params CloudShellEnv) {
 	key, err := env_get_ssh_ppk()
 
 	if err != nil {
+		fmt.Println("\nTip: Run the command: \"gcloud alpha cloud-shell ssh --dry-run\" to setup Cloud Shell SSH keys")
 		return
 	}
 

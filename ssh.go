@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"time"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -34,8 +35,8 @@ func PublicKeyFile(file string) ssh.AuthMethod {
 func exec_command(params CloudShellEnv) {
 	file, err := env_get_ssh_pkey()
 
-	if file == "" {
-		fmt.Println("Error: Cannot get SSH private key file")
+	if err != nil {
+		fmt.Println("\nTip: Run the command: \"gcloud alpha cloud-shell ssh --dry-run\" to setup Cloud Shell SSH keys")
 		return
 	}
 
@@ -117,16 +118,25 @@ func exec_ssh(params CloudShellEnv) {
 		fmt.Println(sshUrl)
 	}
 
-	cmd := exec.Command("ssh", "-p", sshPort, "-i", key, sshUrl)
+	for x:= 0; x < 3; x++ {
+		if x > 0 {
+			fmt.Println("Retrying ...")
 
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+			time.Sleep(1000 * time.Millisecond)
+		}
 
-	err = cmd.Run()
+		cmd := exec.Command("ssh", "-p", sshPort, "-i", key, sshUrl)
 
-	if err != nil {
-		fmt.Println(err)
-		return
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err = cmd.Run()
+
+		if err == nil {
+			return
+		}
 	}
+
+	fmt.Println(err)
 }

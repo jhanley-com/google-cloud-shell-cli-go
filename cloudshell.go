@@ -109,7 +109,7 @@ func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShell
 // https://cloud.google.com/shell/docs/reference/rest/v1alpha1/users.environments/start
 //******************************************************************************************
 
-func cloudshell_start(accessToken string) {
+func cloudshell_start(accessToken string) error {
 	//************************************************************
 	//
 	//************************************************************
@@ -137,14 +137,14 @@ func cloudshell_start(accessToken string) {
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return
+		return err
 	}
 
 	body, err := res.Body()
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return
+		return err
 	}
 
 	fmt.Println("")
@@ -153,7 +153,22 @@ func cloudshell_start(accessToken string) {
 	fmt.Println(string(body))
 	fmt.Println("************************************************************")
 
-	return
+	var params CloudShellEnv
+
+	err = json.Unmarshal(body, &params)
+
+	if err != nil {
+		fmt.Println("Error: Cannot unmarshal JSON: ", err)
+		return err
+	}
+
+	if params.Error.Code != 0 {
+		err = errors.New(params.Error.Message)
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
 }
 
 func env_get_ssh_pkey() (string, error) {
@@ -254,7 +269,11 @@ func call_cloud_shell(accessToken string) {
 	if params.State == "DISABLED" {
 		fmt.Println("CloudShell State:", params.State)
 
-		cloudshell_start(accessToken)
+		err = cloudshell_start(accessToken)
+
+		if err != nil {
+			return
+		}
 
 		for x := 0; x < 60; x++ {
 			time.Sleep(500 * time.Millisecond)
@@ -265,7 +284,12 @@ func call_cloud_shell(accessToken string) {
 				return
 			}
 
+			if params.Error.Code != 0 {
+				return
+			}
+
 			if params.State == "RUNNING" {
+				time.Sleep(500 * time.Millisecond)
 				break;
 			}
 		}

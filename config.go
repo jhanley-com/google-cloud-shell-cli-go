@@ -13,6 +13,7 @@ type ConfigJson struct {
 
 // Global Flags
 type FlagsStruct struct {
+	Adc		bool
 	Auth		bool
 	Login		string
 	Info		bool

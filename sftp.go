@@ -14,7 +14,7 @@ func sftp_download(params CloudShellEnv) {
 	file, err := env_get_ssh_pkey()
 
 	if err != nil {
-		fmt.Println("Error: Cannot get SSH private key file")
+		fmt.Println("\nTip: Run the command: \"gcloud alpha cloud-shell ssh --dry-run\" to setup Cloud Shell SSH keys")
 		return
 	}
 
@@ -86,7 +86,7 @@ func sftp_upload(params CloudShellEnv) {
 	file, err := env_get_ssh_pkey()
 
 	if err != nil {
-		fmt.Println("Error: Cannot get SSH private key file")
+		fmt.Println("\nTip: Run the command: \"gcloud alpha cloud-shell ssh --dry-run\" to setup Cloud Shell SSH keys")
 		return
 	}
 

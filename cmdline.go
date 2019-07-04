@@ -21,14 +21,14 @@ const (
 
 func process_cmdline() {
 	if len(os.Args) < 2 {
-		config.Command = CMD_INFO
-		return
+		cmd_help()
+		os.Exit(0)
 	}
 
 	for _, arg := range os.Args {
 		if arg == "--help" {
 			cmd_help()
-			os.Exit(1)
+			os.Exit(0)
 		}
 	}
 
@@ -44,6 +44,11 @@ func process_cmdline() {
 
 		if arg == "-debug" || arg == "--debug" {
 			config.Debug = true
+			continue
+		}
+
+		if arg == "-adc" || arg == "--adc" {
+			config.Flags.Adc = true
 			continue
 		}
 
@@ -99,21 +104,15 @@ func process_cmdline() {
 			if isWindows() == true {
 				config.Command = CMD_PUTTY
 			} else {
-				fmt.Println("Error: this command is only supported on Windows")
-			}
-
-		case "winssh":
-			if isWindows() == true {
-				config.Command = CMD_WINSSH
-			} else {
-				fmt.Println("Error: this command is only supported on Windows")
+				fmt.Println("Error: This command is only supported on Windows. For Linux use ssh")
+				os.Exit(1)
 			}
 
 		case "ssh":
-			if isWindows() == false {
-				config.Command = CMD_SSH
+			if isWindows() == true {
+				config.Command = CMD_WINSSH
 			} else {
-				fmt.Println("Error: this command is only supported on Linux")
+				config.Command = CMD_SSH
 			}
 
 		case "exec":
@@ -145,8 +144,10 @@ func process_cmdline() {
 				config.DstFile = file
 			}
 
-			fmt.Println("SrcFile:", config.SrcFile)
-			fmt.Println("DstFile:", config.DstFile)
+			if config.Debug == true {
+				fmt.Println("SrcFile:", config.SrcFile)
+				fmt.Println("DstFile:", config.DstFile)
+			}
 
 		case "upload":
 			if len(args) < 2 {
@@ -176,12 +177,14 @@ func process_cmdline() {
 				config.DstFile = file
 			}
 
-			fmt.Println("SrcFile:", config.SrcFile)
-			fmt.Println("DstFile:", config.DstFile)
+			if config.Debug == true {
+				fmt.Println("SrcFile:", config.SrcFile)
+				fmt.Println("DstFile:", config.DstFile)
+			}
 
 		default:
 			if isWindows() == true {
-				fmt.Println("Error: expected a command (info, putty, winssh, exec, upload, download)")
+				fmt.Println("Error: expected a command (info, putty, ssh, exec, upload, download)")
 			} else {
 				fmt.Println("Error: expected a command (info, ssh, exec, upload, download)")
 			}
@@ -196,15 +199,14 @@ func cmd_help() {
 	fmt.Println("  cloudshell info                       - display Cloud Shell information")
 	if isWindows() == true {
 		fmt.Println("  cloudshell putty                      - connect to Cloud Shell with Putty")
-		fmt.Println("  cloudshell winssh                     - connect to Cloud Shell with Windows SSH")
-	} else {
-		fmt.Println("  cloudshell ssh                        - connect to Cloud Shell with Linux SSH")
 	}
+	fmt.Println("  cloudshell ssh                        - connect to Cloud Shell with SSH")
 	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
 	fmt.Println("  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell")
 	fmt.Println("  cloudshell download src_file dst_file - Download from Cloud Shell to local file")
 	fmt.Println("")
 	fmt.Println("--debug - Turn on debug output")
+	fmt.Println("--adc  -  Use Application Default Credentials - Compute Engine only")
 	fmt.Println("--auth  - (re)Authenticate ignoring user_credentials.json")
 	fmt.Println("--login - Specify an email address as a login hint")
 }
