@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 	"github.com/kirinlabs/HttpRequest"
 	"golang.org/x/oauth2/google"
@@ -439,9 +441,56 @@ func get_tokens() (string, string, error) {
 	}
 
 	//************************************************************
-	// FIX - For Linux, this code does not yet support launching
-	// a web browser to authenticate with Google
+	// Load the Google Client Secrets
 	//************************************************************
+
+	secrets, err := loadClientSecrets(config.ClientSecretsFile)
+
+	if err != nil {
+		fmt.Println(err)
+		return "", "", err
+	}
+
+	//************************************************************
+	// If we are running under Linux and the program xdg-open
+	// is not present, then we probably are not running under
+	// a desktop. An example would be Windows Linux Subsystem (WSL)
+	//************************************************************
+
+	var flag_desktop bool = true
+
+	if isWindows() == false {
+		_, err := exec.LookPath("dxg-open")
+
+		if err != nil {
+			flag_desktop = false
+		}
+	}
+
+	//************************************************************
+	// Build the authenticate URL
+	//************************************************************
+
+	url := ENDPOINT
+	url += "?client_id=" + secrets.Installed.ClientID
+	url += "&response_type=code"
+	url += "&scope=" + SCOPE
+	url += "&access_type=offline"
+	if len(config.Flags.Login) != 0 {
+		url += "&login_hint=" + config.Flags.Login
+	}
+
+	if isWindows() == true {
+		url += "&redirect_uri=http://localhost:9000"
+	} else {
+		if flag_desktop == true {
+			url += "&redirect_uri=http://localhost:9000"
+		} else {
+			url += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+
+			return manualAuthentication(secrets, url)
+		}
+	}
 
 	//************************************************************
 	// The following code requires Python
@@ -462,31 +511,6 @@ func get_tokens() (string, string, error) {
 		fmt.Println("Python Path:", python_path)
 	}
 
-/*
-	if isWindows() == false {
-		err := errors.New("Cannot launch Google Chrome on Linux")
-		fmt.Println("Error:", err)
-		return "", "", err
-	}
-*/
-
-	secrets, err := loadClientSecrets(config.ClientSecretsFile)
-
-	if err != nil {
-		fmt.Println(err)
-		return "", "", err
-	}
-
-	//************************************************************
-	url := ENDPOINT
-	url += "?client_id=" + secrets.Installed.ClientID
-	url += "&response_type=code"
-	url += "&scope=" + SCOPE
-	url += "&access_type=offline"
-	if len(config.Flags.Login) != 0 {
-		url += "&login_hint=" + config.Flags.Login
-	}
-	url += "&redirect_uri=http://localhost:9000"
 	//************************************************************
 
 	if isWindows() == true {
@@ -504,6 +528,7 @@ func get_tokens() (string, string, error) {
 
 		err = cmd.Start()
 	} else {
+		// This requires that Linux has a desktop
 		err = exec.Command("xdg-open", url).Start()
 	}
 
@@ -542,14 +567,96 @@ func get_tokens() (string, string, error) {
 		fmt.Println("OAuth2 Code:", string(out))
 	}
 
-	AUTH_CODE := string(out)
+	auth_code := string(out)
 
+	return processAuthCode(secrets, auth_code)
+}
+
+func get_sa_tokens() (string, string, error) {
+	//************************************************************
+	//
+	//************************************************************
+
+	scope := "https://www.googleapis.com/auth/cloud-platform"
+
+	//************************************************************
+	//
+	//************************************************************
+
+       	ctx := context.Background()
+
+	//************************************************************
+	//
+	//************************************************************
+
+	creds, err := google.FindDefaultCredentials(ctx, scope)
+
+	if err != nil {
+		fmt.Println(err)
+		return "", "", err
+	}
+
+	//************************************************************
+	//
+	//************************************************************
+
+	token, err := creds.TokenSource.Token()
+
+	if err != nil {
+		fmt.Println(err)
+		return "", "", err
+	}
+
+	//************************************************************
+	//
+	//************************************************************
+
+	return token.AccessToken, "", nil
+}
+
+func FindChromeBrowser() (string, error) {
+	// Web browser to launch to authenticate
+	// This path is valid for Windows x64 only
+	// FIX - Test for Windows x86
+	var chrome1 = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+	var chrome2 = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+
+	if fileExists(chrome1) {
+		return chrome1, nil
+	}
+
+	if fileExists(chrome2) {
+		return chrome2, nil
+	}
+
+	err := errors.New("Cannot find Google Chrome Browser")
+
+	return "", err
+}
+
+func manualAuthentication(secrets ClientSecrets, url string) (string, string, error) {
+	fmt.Println("Go to the following link in your browser:")
+	fmt.Println()
+	fmt.Println(url)
+	fmt.Println()
+	fmt.Print("Enter verification code: ")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	text, _ := reader.ReadString('\n')
+
+	auth_code := strings.Replace(text, "\n", "", -1)
+
+	return processAuthCode(secrets, auth_code)
+}
+
+func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, error) {
 	//************************************************************
 	content := "client_id=" + secrets.Installed.ClientID
 	content += "&client_secret=" + secrets.Installed.ClientSecret
-	content += "&code=" + AUTH_CODE
-	content += "&redirect_uri=http://localhost:9000"
+	content += "&code=" + auth_code
 	content += "&grant_type=authorization_code"
+	content += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
 	//************************************************************
 
 	endpoint := "https://www.googleapis.com/oauth2/v4/token"
@@ -646,71 +753,11 @@ func get_tokens() (string, string, error) {
 	//
 	//************************************************************
 
-	// debug_displayAccessToken(creds.AccessToken)
-	// debug_displayUserInfo(creds.AccessToken)
-	// debug_displayIDToken(creds.AccessToken, creds.IDToken)
+	if config.Debug == true {
+		debug_displayAccessToken(creds.AccessToken)
+		debug_displayUserInfo(creds.AccessToken)
+		debug_displayIDToken(creds.AccessToken, creds.IDToken)
+	}
 
 	return creds.AccessToken, creds.IDToken, nil
-}
-
-func get_sa_tokens() (string, string, error) {
-	//************************************************************
-	//
-	//************************************************************
-
-	scope := "https://www.googleapis.com/auth/cloud-platform"
-
-	//************************************************************
-	//
-	//************************************************************
-
-       	ctx := context.Background()
-
-	//************************************************************
-	//
-	//************************************************************
-
-	creds, err := google.FindDefaultCredentials(ctx, scope)
-
-	if err != nil {
-		fmt.Println(err)
-		return "", "", err
-	}
-
-	//************************************************************
-	//
-	//************************************************************
-
-	token, err := creds.TokenSource.Token()
-
-	if err != nil {
-		fmt.Println(err)
-		return "", "", err
-	}
-
-	//************************************************************
-	//
-	//************************************************************
-
-	return token.AccessToken, "", nil
-}
-
-func FindChromeBrowser() (string, error) {
-	// Web browser to launch to authenticate
-	// This path is valid for Windows x64 only
-	// FIX - Test for Windows x86
-	var chrome1 = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-	var chrome2 = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-
-	if fileExists(chrome1) {
-		return chrome1, nil
-	}
-
-	if fileExists(chrome2) {
-		return chrome2, nil
-	}
-
-	err := errors.New("Cannot find Google Chrome Browser")
-
-	return "", err
 }
