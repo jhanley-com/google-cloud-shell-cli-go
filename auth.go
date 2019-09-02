@@ -656,7 +656,7 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 	content += "&client_secret=" + secrets.Installed.ClientSecret
 	content += "&code=" + auth_code
 	content += "&grant_type=authorization_code"
-	content += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+	content += "&redirect_uri=http://localhost"
 	//************************************************************
 
 	endpoint := "https://www.googleapis.com/oauth2/v4/token"
