@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
+	
+	"github.com/docker/machine/libmachine/ssh"
+	"strconv"
 )
 
 var path_winssh =  "C:/Windows/System32/OpenSSH/ssh.exe"
@@ -28,12 +30,18 @@ func exec_winssh(params CloudShellEnv) {
 		fmt.Println(sshUrl)
 	}
 
-	cmd := exec.Command("cmd.exe", "/C", "start", path_winssh, sshUrl, "-p", sshPort, "-i", key)
-
-	err = cmd.Start()
-
+	auth := ssh.Auth{Keys: []string{key}}
+	sshPortInt, err := strconv.Atoi(sshPort)
+	client, err := ssh.NewClient(sshUsername, sshHost, sshPortInt, &auth)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Errorf("Failed to create new client - %s", err)
 		return
 	}
+
+	err = client.Shell()
+	if err != nil && err.Error() != "exit status 255" {
+		fmt.Errorf("Failed to request shell - %s", err)
+		return
+	}
+
 }
