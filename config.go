@@ -52,10 +52,13 @@ var config Config
 
 func init_config() error {
 
-	path, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	// path, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	path, err := os.Executable()
     if err != nil {
 		fmt.Println(err)
 	}
+
+	path = filepath.Dir(path)
 
 	config.AbsPath = path
 
