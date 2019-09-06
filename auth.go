@@ -119,7 +119,9 @@ func loadUserCredentials(filename string) (UserCredentials, error) {
 }
 
 func saveUserCredentials(filename string, creds UserCredentials) error {
-	fmt.Println("Save Credentials to:", filename)
+	if config.Debug == true {
+		fmt.Println("Save Credentials to:", filename)
+	}
 
 	j, err := json.MarshalIndent(creds, "", " ")
 
