@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os/exec"
 
-	// "github.com/docker/machine/libmachine/ssh"
 	"strconv"
 
 	"os"
@@ -35,39 +34,40 @@ func exec_winssh(params CloudShellEnv) {
 		fmt.Println(sshUrl)
 	}
 
-	sshBinaryPath, err := exec.LookPath("ssh")
+	sshBinaryPath, err := exec.LookPath(config.AbsPath + "/ssh")
 	if err != nil {
-		// fmt.Println("cmd.exe", "/C", "start", path_winssh, sshUrl, "-p", sshPort, "-i", key)
-
-		cmd := exec.Command("cmd.exe", "/C", "start", path_winssh, sshUrl, "-p", sshPort, "-i", key)
-		err = cmd.Start()
-
+		sshBinaryPath, err = exec.LookPath("ssh")
 		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-	} else {
-
-		auth := Auth{Keys: []string{key}}
-		sshPortInt, err := strconv.Atoi(sshPort)
-
-		client, err := NewExternalClient(sshBinaryPath, sshUsername, sshHost, sshPortInt, config.Flags.BindAddress, &auth)
-		if err != nil {
-			fmt.Errorf("Failed to create new client - %s", err)
-			return
-		}
-
-		err = client.Shell()
-		if err != nil && err.Error() != "exit status 255" {
-			fmt.Errorf("Failed to request shell - %s", err)
-			return
+			if runtime.GOOS != "windows" {
+				sshBinaryPath = "ssh"
+			} else {
+				sshBinaryPath = "ssh.exe"
+			}
 		}
 	}
 
+	if config.Debug == true {
+		fmt.Println("Use:", sshBinaryPath)
+	}
+
+	auth := Auth{Keys: []string{key}}
+	sshPortInt, err := strconv.Atoi(sshPort)
+
+	client, err := NewExternalClient(sshBinaryPath, sshUsername, sshHost, sshPortInt, config.Flags.BindAddress, &auth)
+	if err != nil {
+		fmt.Errorf("Failed to create new client - %s", err)
+		return
+	}
+
+	err = client.Shell()
+	if err != nil && err.Error() != "exit status 255" {
+		fmt.Errorf("Failed to request shell - %s", err)
+		return
+	}
 }
 
 
+// "github.com/docker/machine/libmachine/ssh"
 
 type ExternalClient struct {
 	BaseArgs   []string

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 type ConfigJson struct {
@@ -42,12 +43,23 @@ type Config struct {
 
 	// Command line global options
 	Flags			FlagsStruct
+
+	// ABS Path
+	AbsPath			string
 }
 
 var config Config
 
 func init_config() error {
-	in, err := os.Open("config.json")
+
+	path, err := filepath.Abs(filepath.Dir(os.Args[0]))
+    if err != nil {
+		fmt.Println(err)
+	}
+
+	config.AbsPath = path
+
+	in, err := os.Open( config.AbsPath + "/config.json")
 
 	if err != nil {
 		fmt.Println(err)

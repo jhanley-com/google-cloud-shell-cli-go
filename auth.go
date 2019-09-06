@@ -55,8 +55,8 @@ type OAuthTokens struct {
 }
 
 func readCredentials(filename string) ([]byte, error) {
-	in, err := os.Open(filename)
 
+	in, err := os.Open(config.AbsPath + "/" + filename)
 	if err != nil {
 		return []byte(""), err
 	}
@@ -131,7 +131,7 @@ func saveUserCredentials(filename string, creds UserCredentials) error {
 	}
 
 	// err = ioutil.WriteFile(filename + ".test", j, 0644)
-	err = ioutil.WriteFile(filename, j, 0644)
+	err = ioutil.WriteFile(config.AbsPath + "/" + filename, j, 0644)
 
 	if err != nil {
 		fmt.Println(err)
@@ -425,7 +425,7 @@ func get_tokens() (string, string, error) {
 	// fmt.Println("Login:", config.Flags.Login)
 
 	if config.Flags.Auth == false {
-		if fileExists(SavedUserCredentials) {
+		if fileExists(config.AbsPath + "/" + SavedUserCredentials) {
 			accessToken, idToken, valid := doRefresh(SavedUserCredentials)
 
 			if valid == true {
