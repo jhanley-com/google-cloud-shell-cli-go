@@ -115,6 +115,14 @@ func process_cmdline() {
 				config.Command = CMD_SSH
 			}
 
+			argString := strings.Join(args, ",")
+			if strings.Contains(argString, "-D,") {
+				config.Flags.BindAddress = args[x + 2]
+
+				// break
+				return
+			}
+
 		case "exec":
 			if len(args) < 2 {
 				fmt.Println("Error: expected a remote command")

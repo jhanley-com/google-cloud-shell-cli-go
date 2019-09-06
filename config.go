@@ -17,6 +17,7 @@ type FlagsStruct struct {
 	Auth		bool
 	Login		string
 	Info		bool
+	BindAddress		string
 }
 
 type Config struct {

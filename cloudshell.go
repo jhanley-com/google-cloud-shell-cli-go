@@ -271,7 +271,9 @@ func call_cloud_shell(accessToken string) {
 	}
 
 	if params.State == "DISABLED" {
-		fmt.Println("CloudShell State:", params.State)
+		if config.Debug == true {
+			fmt.Println("CloudShell State:", params.State)
+		}
 
 		err = cloudshell_start(accessToken)
 
