@@ -295,7 +295,8 @@ func call_cloud_shell(accessToken string) {
 			}
 
 			if params.State == "RUNNING" {
-				time.Sleep(500 * time.Millisecond)
+				// Increase waiting time
+				time.Sleep(1500 * time.Millisecond)
 				break;
 			}
 		}

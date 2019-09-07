@@ -86,6 +86,18 @@ func process_cmdline() {
 			continue
 		}
 
+		// SSH args
+		if strings.HasPrefix(arg, "-o") {
+			config.sshFlags = append(config.sshFlags, "-o", os.Args[x + 1])
+			x++
+			continue
+		}
+		if strings.HasPrefix(arg, "-D") {
+			config.sshFlags = append(config.sshFlags, "-D", os.Args[x + 1])
+			x++
+			continue
+		}
+
 		args = append(args, arg)
 	}
 
@@ -115,13 +127,14 @@ func process_cmdline() {
 				config.Command = CMD_SSH
 			}
 
-			argString := strings.Join(args, ",")
-			if strings.Contains(argString, "-D,") {
-				config.Flags.BindAddress = args[x + 2]
+			// argString := strings.Join(args, ",")
+			// if strings.Contains(argString, "-D,") {
+			// 	config.Flags.BindAddress = args[x + 2]
 
-				// break
-				return
-			}
+			// 	// break
+			// 	return
+			// }
+			return
 
 		case "exec":
 			if len(args) < 2 {

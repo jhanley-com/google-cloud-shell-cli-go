@@ -11,7 +11,7 @@ import (
 	"runtime"
 )
 
-var path_winssh =  "C:/Windows/System32/OpenSSH/ssh.exe"
+// var path_winssh =  "C:/Windows/System32/OpenSSH/ssh.exe"
 
 func exec_winssh(params CloudShellEnv) {
 	key, err := env_get_ssh_pkey()
@@ -53,7 +53,7 @@ func exec_winssh(params CloudShellEnv) {
 	auth := Auth{Keys: []string{key}}
 	sshPortInt, err := strconv.Atoi(sshPort)
 
-	client, err := NewExternalClient(sshBinaryPath, sshUsername, sshHost, sshPortInt, config.Flags.BindAddress, &auth)
+	client, err := NewExternalClient(sshBinaryPath, sshUsername, sshHost, sshPortInt, &auth, config.sshFlags)
 	if err != nil {
 		fmt.Errorf("Failed to create new client - %s", err)
 		return
@@ -91,7 +91,7 @@ var (
 	baseSSHArgs = []string{
 		"-F", "/dev/null",
 		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
-		"-o", "ConnectTimeout=10", // timeout after 10 seconds
+		"-o", "ConnectTimeout=30", // timeout after 10 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=none",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
@@ -103,7 +103,7 @@ var (
 	defaultClientType = External
 )
 
-func NewExternalClient(sshBinaryPath, user, host string, port int, bind string, auth *Auth) (*ExternalClient, error) {
+func NewExternalClient(sshBinaryPath, user, host string, port int, auth *Auth, flags []string) (*ExternalClient, error) {
 	client := &ExternalClient{
 		BinaryPath: sshBinaryPath,
 	}
@@ -144,12 +144,16 @@ func NewExternalClient(sshBinaryPath, user, host string, port int, bind string, 
 	// Set which port to use for SSH.
 	args = append(args, "-p", fmt.Sprintf("%d", port))
 
-	if len(bind) > 0 {
-		args = append(args, "-D", bind)
+	if len(flags) > 0 {
+		args = append(args, flags...)
 		// fmt.Println(args)
 	}
 
 	client.BaseArgs = args
+
+	if config.Debug == true {
+		fmt.Println("sshArgs:", client.BaseArgs)
+	}
 
 	return client, nil
 }
@@ -219,6 +223,6 @@ func closeConn(c io.Closer) {
 	err := c.Close()
 	if err != nil {
 		// log.Debugf("Error closing SSH Client: %s", err)
-		// fmt.Errorf("Error closing SSH Client: %s", err)
+		fmt.Errorf("Error closing SSH Client: %s", err)
 	}
 }

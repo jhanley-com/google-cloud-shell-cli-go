@@ -18,7 +18,6 @@ type FlagsStruct struct {
 	Auth		bool
 	Login		string
 	Info		bool
-	BindAddress		string
 }
 
 type Config struct {
@@ -43,6 +42,9 @@ type Config struct {
 
 	// Command line global options
 	Flags			FlagsStruct
+
+	// Command line ssh options
+	sshFlags			[]string
 
 	// ABS Path
 	AbsPath			string
