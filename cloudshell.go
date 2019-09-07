@@ -269,11 +269,12 @@ func call_cloud_shell(accessToken string) {
 	if config.Command == CMD_INFO {
 		return
 	}
-
 	if params.State == "DISABLED" {
 		if config.Debug == true {
 			fmt.Println("CloudShell State:", params.State)
 		}
+
+		fmt.Println("Starting Google Cloud Shell...")
 
 		err = cloudshell_start(accessToken)
 
@@ -295,8 +296,9 @@ func call_cloud_shell(accessToken string) {
 			}
 
 			if params.State == "RUNNING" {
+				fmt.Println("Startup successful, Waiting for SSH server to be ready...")
 				// Increase waiting time
-				time.Sleep(1500 * time.Millisecond)
+				time.Sleep(5000 * time.Millisecond)
 				break;
 			}
 		}

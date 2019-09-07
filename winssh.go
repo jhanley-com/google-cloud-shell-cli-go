@@ -90,7 +90,7 @@ type ClientType string
 var (
 	baseSSHArgs = []string{
 		"-F", "/dev/null",
-		"-o", "ConnectionAttempts=3", // retry 3 times if SSH connection fails
+		"-o", "ConnectionAttempts=5", // retry 5 times if SSH connection fails
 		"-o", "ConnectTimeout=30", // timeout after 10 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=none",
