@@ -6,9 +6,10 @@ import (
 
 	"strconv"
 
-	"os"
 	"io"
+	"os"
 	"runtime"
+	"time"
 )
 
 // var path_winssh =  "C:/Windows/System32/OpenSSH/ssh.exe"
@@ -59,6 +60,8 @@ func exec_winssh(params CloudShellEnv) {
 		return
 	}
 
+	// ping
+	go client.ServerAliveInterval()
 	err = client.Shell()
 	if err != nil && err.Error() != "exit status 255" {
 		fmt.Errorf("Failed to request shell - %s", err)
@@ -66,6 +69,21 @@ func exec_winssh(params CloudShellEnv) {
 	}
 }
 
+func (client *ExternalClient) ServerAliveInterval() {
+	for true {
+		time.Sleep(30000 * time.Millisecond)
+		args := append(client.BaseArgs, "printf", "⌚"+strconv.FormatInt(time.Now().Unix(), 10))
+		cmd := getSSHCmd(client.BinaryPath, args...)
+		output, err := cmd.CombinedOutput()
+
+		if err != nil {
+			fmt.Errorf("Ping error - %s", err)
+			// return
+		}
+
+		fmt.Printf(string(output))
+	}
+}
 
 // "github.com/docker/machine/libmachine/ssh"
 
