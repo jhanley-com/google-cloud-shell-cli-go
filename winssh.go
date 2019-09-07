@@ -91,12 +91,12 @@ var (
 	baseSSHArgs = []string{
 		"-F", "/dev/null",
 		"-o", "ConnectionAttempts=5", // retry 5 times if SSH connection fails
-		"-o", "ConnectTimeout=30", // timeout after 10 seconds
+		"-o", "ConnectTimeout=10", // timeout after 10 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=none",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-o", "PasswordAuthentication=no",
-		"-o", "ServerAliveInterval=60", // prevents connection to be dropped if command takes too long
+		"-o", "ServerAliveInterval=30", // prevents connection to be dropped if command takes too long
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "UserKnownHostsFile=/dev/null",
 	}
