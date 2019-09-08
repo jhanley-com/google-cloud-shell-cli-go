@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
 	"github.com/kirinlabs/HttpRequest"
 	"golang.org/x/oauth2/google"
 )
@@ -31,27 +33,27 @@ type ClientSecrets struct {
 }
 
 type UserCredentials struct {
-	ClientID                string   `json:"client_id"`
-	ClientSecret            string   `json:"client_secret"`
-	RefreshToken            string   `json:"refresh_token"`
-	Scope            	string   `json:"scope"`
-	Type             	string   `json:"type"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+	Type         string `json:"type"`
 	// The following two fields are option and exist after authentication
-	AccessToken		string   `json:"access_token"`
-	IDToken			string   `json:"id_token"`
-	Email			string	 `json:"email"`
-	ExpiresAt		int64	 `json:"expires_at"`
+	AccessToken string `json:"access_token"`
+	IDToken     string `json:"id_token"`
+	Email       string `json:"email"`
+	ExpiresAt   int64  `json:"expires_at"`
 }
 
 type OAuthTokens struct {
-	AccessToken		string   `json:"access_token"`
-	ExpiresIn               int      `json:"expires_in"`
-	RefreshToken            string   `json:"refresh_token"`
-	Scope            	string   `json:"scope"`
-	TokenType            	string   `json:"token_type"`
-	IDToken			string   `json:"id_token"`
-	Error			string   `json:"error"`
-	ErrorDescription	string   `json:"error_description"`
+	AccessToken      string `json:"access_token"`
+	ExpiresIn        int    `json:"expires_in"`
+	RefreshToken     string `json:"refresh_token"`
+	Scope            string `json:"scope"`
+	TokenType        string `json:"token_type"`
+	IDToken          string `json:"id_token"`
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
 }
 
 func readCredentials(filename string) ([]byte, error) {
@@ -71,7 +73,8 @@ func readCredentials(filename string) ([]byte, error) {
 func loadClientSecrets(filename string) (ClientSecrets, error) {
 	var secrets ClientSecrets
 
-	data, err := readCredentials(filename)
+	// data, err := readCredentials(filename)
+	data, err := base64.StdEncoding.DecodeString("eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiNjU4OTM5NTQ0ODM3LXNtaHR1MG42N3A3MGdqM2o0Y2JtZGw2NmNma3RhcWx2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwicHJvamVjdF9pZCI6InhjbG91ZHNoZWxsIiwiYXV0aF91cmkiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20vby9vYXV0aDIvYXV0aCIsInRva2VuX3VyaSI6Imh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwiY2xpZW50X3NlY3JldCI6Imt0Y2MxdlNUVFphaHRQVlc4SUE4MzN2USIsInJlZGlyZWN0X3VyaXMiOlsidXJuOmlldGY6d2c6b2F1dGg6Mi4wOm9vYiIsImh0dHA6Ly9sb2NhbGhvc3QiXX19")
 
 	if err != nil {
 		return secrets, err
@@ -131,7 +134,7 @@ func saveUserCredentials(filename string, creds UserCredentials) error {
 	}
 
 	// err = ioutil.WriteFile(filename + ".test", j, 0644)
-	err = ioutil.WriteFile(config.AbsPath + "/" + filename, j, 0644)
+	err = ioutil.WriteFile(config.AbsPath+"/"+filename, j, 0644)
 
 	if err != nil {
 		fmt.Println(err)
@@ -192,7 +195,7 @@ func doRefresh(filename string) (string, string, bool) {
 	// Brand new tokens are valid for 3600 seconds
 	// For testing require 15 minutes or 900 seconds
 
-	var t time.Time = time.Unix(creds.ExpiresAt - (15 * 60), 0)
+	var t time.Time = time.Unix(creds.ExpiresAt-(15*60), 0)
 	// fmt.Println(t)
 
 	// fmt.Println(time.Now())
@@ -243,14 +246,14 @@ func doRefresh(filename string) (string, string, bool) {
 
 	var expires_at int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
 
-/*
-	fmt.Println("AccessToken:", tokens.AccessToken)
-	fmt.Println("ExpiresIn:", tokens.ExpiresIn)
-	fmt.Println("ExpiresAt:", expires_at)
-	fmt.Println("Scope:", tokens.Scope)
-	fmt.Println("TokenType:", tokens.TokenType)
-	fmt.Println("IDToken:", tokens.IDToken)
-*/
+	/*
+		fmt.Println("AccessToken:", tokens.AccessToken)
+		fmt.Println("ExpiresIn:", tokens.ExpiresIn)
+		fmt.Println("ExpiresAt:", expires_at)
+		fmt.Println("Scope:", tokens.Scope)
+		fmt.Println("TokenType:", tokens.TokenType)
+		fmt.Println("IDToken:", tokens.IDToken)
+	*/
 
 	creds.AccessToken = tokens.AccessToken
 	creds.IDToken = tokens.IDToken
@@ -352,15 +355,15 @@ func debug_displayIDToken(accessToken, idToken string) {
 
 func get_email_address(accessToken string) (string, error) {
 	type Access_Token struct {
-		Azp		string   `json:"azp"`
-		Aud		string   `json:"aud"`
-		Sub		string   `json:"sub"`
-		Scope		string   `json:"scope"`
-		Exp		string   `json:"exp"`
-		Expires_in	string   `json:"expires_in"`
-		Email		string   `json:"email"`
-		Email_verified	string   `json:"email_verified"`
-		Access_type	string   `json:"access_type"`
+		Azp            string `json:"azp"`
+		Aud            string `json:"aud"`
+		Sub            string `json:"sub"`
+		Scope          string `json:"scope"`
+		Exp            string `json:"exp"`
+		Expires_in     string `json:"expires_in"`
+		Email          string `json:"email"`
+		Email_verified string `json:"email_verified"`
+		Access_type    string `json:"access_type"`
 	}
 
 	//************************************************************
@@ -435,7 +438,6 @@ func get_tokens() (string, string, error) {
 				// debug_displayAccessToken(accessToken)
 				// debug_displayUserInfo(accessToken)
 				// debug_displayIDToken(accessToken, idToken)
-
 
 				return accessToken, idToken, nil
 			}
@@ -585,7 +587,7 @@ func get_sa_tokens() (string, string, error) {
 	//
 	//************************************************************
 
-       	ctx := context.Background()
+	ctx := context.Background()
 
 	//************************************************************
 	//

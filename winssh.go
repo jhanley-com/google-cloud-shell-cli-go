@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"time"
 
 	"strconv"
 
@@ -59,10 +60,27 @@ func exec_winssh(params CloudShellEnv) {
 		return
 	}
 
+	// Set heartbeats
+	go client.HeartBeats()
+
+	// "curl -sSL https://raw.githubusercontent.com/ixiumu/google-cloud-shell-cli-go/patch-1/scripts-remote/heartbeats | sh & bash"
 	err = client.Shell()
 	if err != nil && err.Error() != "exit status 255" {
 		fmt.Errorf("Failed to request shell - %s", err)
 		return
+	}
+}
+
+func (client *ExternalClient) HeartBeats() {
+	for true {
+		time.Sleep(360 * time.Second)
+		args := append(client.BaseArgs, "curl -I -H \"Devshell-Vm-Ip-Address:${DEVSHELL_IP_ADDRESS}\" -X POST -s -w %{http_code} -o /dev/null ${DEVSHELL_SERVER_URL}/devshell/vmheartbeat")
+		cmd := getSSHCmd(client.BinaryPath, args...)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Errorf("HeartBeats error: %s", err)
+		}
+		fmt.Print("HeartBeats: ", string(output))
 	}
 }
 
