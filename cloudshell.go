@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	"github.com/kirinlabs/HttpRequest"
 )
 
@@ -28,17 +29,17 @@ import (
 //******************************************************************************************
 
 type CloudShellEnv struct {
-	Name                 string   `json:"name"`
-	Id                   string   `json:"id"`
-	DockerImage          string   `json:"dockerImage"`
-	State                string   `json:"state"`
-	SshUsername          string   `json:"sshUsername"`
-	SshHost              string   `json:"sshHost"`
-	SshPort              int32   `json:"sshPort"`
-	Error struct {
-		Code              int32   `json:"code"`
-		Message           string  `json:"message"`
-		Status            string  `json:"status"`
+	Name        string `json:"name"`
+	Id          string `json:"id"`
+	DockerImage string `json:"dockerImage"`
+	State       string `json:"state"`
+	SshUsername string `json:"sshUsername"`
+	SshHost     string `json:"sshHost"`
+	SshPort     int32  `json:"sshPort"`
+	Error       struct {
+		Code    int32  `json:"code"`
+		Message string `json:"message"`
+		Status  string `json:"status"`
 	} `json:"error"`
 }
 
@@ -60,8 +61,8 @@ func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShell
 	req := HttpRequest.NewRequest()
 
 	req.SetHeaders(map[string]string{
-			"Authorization": "Bearer " + accessToken,
-			"X-Goog-User-Project": config.ProjectId})
+		"Authorization":       "Bearer " + accessToken,
+		"X-Goog-User-Project": config.ProjectId})
 
 	//************************************************************
 	//
@@ -128,8 +129,8 @@ func cloudshell_start(accessToken string) error {
 	// req.Header.Set("X-Goog-User-Project", config.ProjectId)
 
 	req.SetHeaders(map[string]string{
-			"Authorization": "Bearer " + accessToken,
-			"X-Goog-User-Project": config.ProjectId})
+		"Authorization":       "Bearer " + accessToken,
+		"X-Goog-User-Project": config.ProjectId})
 
 	//************************************************************
 	//
@@ -299,7 +300,7 @@ func call_cloud_shell(accessToken string) {
 				fmt.Println("Startup successful, Waiting for SSH server to be ready...")
 				// Increase waiting time
 				time.Sleep(5000 * time.Millisecond)
-				break;
+				break
 			}
 		}
 	}
@@ -307,10 +308,6 @@ func call_cloud_shell(accessToken string) {
 	if params.State != "RUNNING" {
 		fmt.Println("CloudShell State:", params.State)
 		return
-	}
-
-	if config.Command == CMD_PUTTY {
-		exec_putty(params)
 	}
 
 	if config.Command == CMD_WINSSH {
@@ -331,5 +328,13 @@ func call_cloud_shell(accessToken string) {
 
 	if config.Command == CMD_UPLOAD {
 		sftp_upload(params)
+	}
+
+	if config.Command == CMD_PUTTY {
+		exec_putty(params)
+	}
+
+	if config.Command == CMD_WINSCP {
+		exec_winscp(params)
 	}
 }

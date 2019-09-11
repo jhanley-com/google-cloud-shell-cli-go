@@ -106,9 +106,9 @@ type ClientType string
 
 var (
 	baseSSHArgs = []string{
-		"-F", "/dev/null",
+		// "-F", "/dev/null", // disable load ~/.ssh/config
 		"-o", "ConnectionAttempts=5", // retry 5 times if SSH connection fails
-		"-o", "ConnectTimeout=10", // timeout after 10 seconds
+		// "-o", "ConnectTimeout=5", // timeout after 5 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=none",
 		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."

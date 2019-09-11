@@ -11,12 +11,13 @@ import (
 // Commands for this program
 const (
 	CMD_INFO = iota
-	CMD_PUTTY
 	CMD_WINSSH
 	CMD_SSH
 	CMD_EXEC
 	CMD_UPLOAD
 	CMD_DOWNLOAD
+	CMD_PUTTY
+	CMD_WINSCP
 )
 
 func process_cmdline() {
@@ -61,12 +62,12 @@ func process_cmdline() {
 			fmt.Println("index:", x)
 			fmt.Println("count:", len(os.Args))
 
-			if x == len(os.Args) - 1 {
+			if x == len(os.Args)-1 {
 				fmt.Println("Error: Missing email address to --login")
 				os.Exit(1)
 			}
 
-			config.Flags.Login = os.Args[x + 1]
+			config.Flags.Login = os.Args[x+1]
 			config.Flags.Auth = true
 			x++
 			continue
@@ -88,14 +89,19 @@ func process_cmdline() {
 
 		// SSH args
 		if strings.HasPrefix(arg, "-o") {
-			config.sshFlags = append(config.sshFlags, "-o", os.Args[x + 1])
+			config.sshFlags = append(config.sshFlags, "-o", os.Args[x+1])
 			x++
 			continue
 		}
 		if strings.HasPrefix(arg, "-D") {
-			config.sshFlags = append(config.sshFlags, "-D", os.Args[x + 1])
+			config.sshFlags = append(config.sshFlags, "-D", os.Args[x+1])
 			x++
 			continue
+		}
+		// WINSCP args
+		if strings.HasPrefix(arg, "/rawsettings") {
+			config.sshFlags = append(config.sshFlags, os.Args[x:]...)
+			break
 		}
 
 		args = append(args, arg)
@@ -111,14 +117,6 @@ func process_cmdline() {
 		switch arg {
 		case "info":
 			config.Command = CMD_INFO
-
-		case "putty":
-			if isWindows() == true {
-				config.Command = CMD_PUTTY
-			} else {
-				fmt.Println("Error: This command is only supported on Windows. For Linux use ssh")
-				os.Exit(1)
-			}
 
 		case "ssh":
 			if isWindows() == true {
@@ -143,7 +141,7 @@ func process_cmdline() {
 			}
 
 			config.Command = CMD_EXEC
-			config.RemoteCommand = args[x + 1]
+			config.RemoteCommand = args[x+1]
 			x++
 
 		case "download":
@@ -153,11 +151,11 @@ func process_cmdline() {
 			}
 
 			config.Command = CMD_DOWNLOAD
-			config.SrcFile = strings.ReplaceAll(args[x + 1], "\\", "/")
+			config.SrcFile = strings.ReplaceAll(args[x+1], "\\", "/")
 			x++
 
 			if len(args) >= 3 {
-				config.DstFile = strings.ReplaceAll(args[x + 1], "\\", "/")
+				config.DstFile = strings.ReplaceAll(args[x+1], "\\", "/")
 				x++
 			} else {
 				_, file := path.Split(config.SrcFile)
@@ -176,7 +174,7 @@ func process_cmdline() {
 				os.Exit(1)
 			}
 
-			path, err := filepath.Abs(args[x + 1])
+			path, err := filepath.Abs(args[x+1])
 
 			if err != nil {
 				fmt.Println(err)
@@ -188,7 +186,7 @@ func process_cmdline() {
 			x++
 
 			if len(args) >= 3 {
-				config.DstFile = strings.ReplaceAll(args[x + 1], "\\", "/")
+				config.DstFile = strings.ReplaceAll(args[x+1], "\\", "/")
 				x++
 			} else {
 				file := strings.ReplaceAll(config.SrcFile, "\\", "/")
@@ -201,6 +199,22 @@ func process_cmdline() {
 			if config.Debug == true {
 				fmt.Println("SrcFile:", config.SrcFile)
 				fmt.Println("DstFile:", config.DstFile)
+			}
+
+		case "putty":
+			if isWindows() == true {
+				config.Command = CMD_PUTTY
+			} else {
+				fmt.Println("Error: This command is only supported on Windows. For Linux use ssh")
+				os.Exit(1)
+			}
+
+		case "winscp":
+			if isWindows() == true {
+				config.Command = CMD_WINSCP
+			} else {
+				fmt.Println("Error: This command is only supported on Windows. For Linux use ssh")
+				os.Exit(1)
 			}
 
 		default:
