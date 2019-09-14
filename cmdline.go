@@ -103,6 +103,14 @@ func process_cmdline() {
 			config.sshFlags = append(config.sshFlags, os.Args[x:]...)
 			break
 		}
+		if arg == "-v2ray" || arg == "--v2" {
+			config.Proxy = "v2ray"
+			continue
+		}
+		if arg == "-shadowsocks" || arg == "--ss" {
+			config.Proxy = "shadowsocks"
+			continue
+		}
 
 		args = append(args, arg)
 	}

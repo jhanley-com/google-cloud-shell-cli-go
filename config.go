@@ -46,6 +46,9 @@ type Config struct {
 
 	// ABS Path
 	AbsPath string
+
+	// proxy
+	Proxy string
 }
 
 var config Config

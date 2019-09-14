@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os/exec"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 )
 
 // var path_winssh =  "C:/Windows/System32/OpenSSH/ssh.exe"
+var proxy *exec.Cmd
 
 func exec_winssh(params CloudShellEnv) {
 	key, err := env_get_ssh_pkey()
@@ -33,6 +35,22 @@ func exec_winssh(params CloudShellEnv) {
 		fmt.Println(sshHost)
 		fmt.Println(sshPort)
 		fmt.Println(sshUrl)
+	}
+
+	// go ShadowSocks(sshHost, sshPort)
+
+	if config.Proxy == "v2ray" {
+		fmt.Println("Proxy: V2ray")
+
+		V2ray(sshHost, sshPort)
+		// time.Sleep(2 * time.Second)
+		CheckPort(sshHost, sshPort)
+	} else if config.Proxy == "shadowsocks" {
+		fmt.Println("Proxy: V2ray")
+
+		ShadowSocks(sshHost, sshPort)
+		// time.Sleep(2 * time.Second)
+		CheckPort(sshHost, sshPort)
 	}
 
 	sshBinaryPath, err := exec.LookPath(config.AbsPath + "/ssh")
@@ -56,7 +74,7 @@ func exec_winssh(params CloudShellEnv) {
 
 	client, err := NewExternalClient(sshBinaryPath, sshUsername, sshHost, sshPortInt, &auth, config.sshFlags)
 	if err != nil {
-		fmt.Errorf("Failed to create new client - %s", err)
+		fmt.Println("Failed to create new client - ", err)
 		return
 	}
 
@@ -66,8 +84,111 @@ func exec_winssh(params CloudShellEnv) {
 	// "curl -sSL https://raw.githubusercontent.com/ixiumu/google-cloud-shell-cli-go/patch-1/scripts-remote/heartbeats | sh & bash"
 	err = client.Shell()
 	if err != nil && err.Error() != "exit status 255" {
-		fmt.Errorf("Failed to request shell - %s", err)
+		fmt.Println("Failed to request shell - ", err)
+		// return
+	}
+
+	if config.Proxy != "" {
+		proxy.Process.Kill()
+	}
+
+}
+
+func V2ray(sshHost string, sshPort string) {
+	ssBinaryPath, err := exec.LookPath(config.AbsPath + "/v2ray/v2ray.exe")
+	if err != nil {
+		fmt.Println("Failed to create proxy client - ", err)
 		return
+	}
+
+	url := "http://" + sshHost + ":" + sshPort + "/api/v2ray.json"
+
+	proxy = exec.Command(ssBinaryPath, "-config", url)
+
+	err = proxy.Start()
+	if err != nil {
+		fmt.Println("Failed to create proxy client - ", err)
+		return
+	}
+
+	if config.Debug == true {
+		fmt.Println("Proxy Config:", url)
+	}
+
+	// config.sshFlags = append(config.sshFlags, "-o", "ProxyCommand=\"C:\\Program Files\\Git\\mingw64\\bin\\connect.exe -S 127.0.0.1:8022 %h %p\"")
+
+	config.sshFlags = append(config.sshFlags, "-o", "ProxyCommand=connect.exe -S 127.0.0.1:8022 %h %p")
+
+	// https://stackoverflow.com/questions/34730941/ensure-executables-called-in-go-process-get-killed-when-process-is-killed
+
+}
+
+func ShadowSocks(sshHost string, sshPort string) {
+	// ss-local -s 1.1.1.1 -p 6000 -k 7758521 -m rc4-md5 -l 8022 --plugin v2ray-plugin --plugin-opts "tls;path=/api/shadowsocks/;host=localhost"
+	ssArgs := []string{"-m", "rc4-md5", "-l", "8022", "--plugin-opts", "tls;path=/api/shadowsocks/;host=localhost"}
+
+	ssArgs = append(ssArgs, "-k", "7758521")
+	ssArgs = append(ssArgs, "-s", sshHost)
+	ssArgs = append(ssArgs, "-p", sshPort)
+
+	ssBinaryPath, err := exec.LookPath(config.AbsPath + "/shadowsocks-libev/ss-local.exe")
+
+	// fmt.Println(ssBinaryPath)
+
+	if err != nil {
+		fmt.Println("Failed to create proxy client - ", err)
+		return
+	}
+
+	ssPluginBinaryPath, err := exec.LookPath(config.AbsPath + "/shadowsocks-libev/v2ray-plugin.exe")
+	if err != nil {
+		fmt.Println("Failed to find proxy plugin - ", err)
+		return
+	}
+
+	ssArgs = append(ssArgs, "--plugin", ssPluginBinaryPath)
+
+	proxy = exec.Command(ssBinaryPath, ssArgs...)
+	// output, err := proxy.CombinedOutput()
+	// fmt.Println(string(output))
+	// return
+	err = proxy.Start()
+	if err != nil {
+		fmt.Println("Failed to create proxy client - ", err)
+		return
+	}
+
+	if config.Debug == true {
+		fmt.Println("Proxy:", ssArgs)
+	}
+
+	config.sshFlags = append(config.sshFlags, "-o", "ProxyCommand=connect.exe -S 127.0.0.1:8022 %h %p")
+
+}
+
+func CheckPort(sshHost string, sshPort string) {
+	for x := 0; x < 60; x++ {
+		time.Sleep(500 * time.Millisecond)
+
+		resp, err := http.Get("http://" + sshHost + ":" + sshPort + "/api/v2ray.json")
+
+		if err != nil {
+			return
+		}
+
+		defer resp.Body.Close()
+
+		// if resp.StatusCode != http.StatusOK {
+		// 	// fmt.Println("Error: status code",resp.StatusCode)
+		// 	return
+		// }
+
+		if resp.StatusCode == 200 {
+			if config.Debug == true {
+				fmt.Println("CheckPort: status code", resp.StatusCode)
+			}
+			break
+		}
 	}
 }
 
@@ -78,7 +199,7 @@ func (client *ExternalClient) HeartBeats() {
 		cmd := getSSHCmd(client.BinaryPath, args...)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			fmt.Errorf("HeartBeats error: %s", err)
+			fmt.Println("HeartBeats error: ", err)
 		}
 		fmt.Print("HeartBeats: ", string(output))
 	}
@@ -111,7 +232,7 @@ var (
 		// "-o", "ConnectTimeout=5", // timeout after 5 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=none",
-		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
+		// "-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-o", "PasswordAuthentication=no",
 		"-o", "ServerAliveInterval=30", // prevents connection to be dropped if command takes too long
 		"-o", "StrictHostKeyChecking=no",
@@ -240,6 +361,6 @@ func closeConn(c io.Closer) {
 	err := c.Close()
 	if err != nil {
 		// log.Debugf("Error closing SSH Client: %s", err)
-		fmt.Errorf("Error closing SSH Client: %s", err)
+		fmt.Println("Error closing SSH Client: ", err)
 	}
 }

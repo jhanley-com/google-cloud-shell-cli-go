@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/kirinlabs/HttpRequest"
@@ -136,7 +137,7 @@ func cloudshell_start(accessToken string) error {
 	//
 	//************************************************************
 
-	res, err := req.Post(endpoint)
+	res, err := req.JSON().Post(endpoint, "{\"accessToken\": \""+accessToken+"\"}")
 
 	if err != nil {
 		fmt.Println("Error: ", err)
@@ -270,12 +271,12 @@ func call_cloud_shell(accessToken string) {
 	if config.Command == CMD_INFO {
 		return
 	}
-	if params.State == "DISABLED" {
+	if params.State != "DISABLED" {
 		if config.Debug == true {
 			fmt.Println("CloudShell State:", params.State)
 		}
 
-		fmt.Println("Starting Google Cloud Shell...")
+		fmt.Println("Starting your Cloud Shell machine...")
 
 		err = cloudshell_start(accessToken)
 
@@ -297,12 +298,36 @@ func call_cloud_shell(accessToken string) {
 			}
 
 			if params.State == "RUNNING" {
-				fmt.Println("Startup successful, Waiting for SSH server to be ready...")
+				fmt.Println("Waiting for your Cloud Shell machine to start...")
 				// Increase waiting time
-				time.Sleep(5000 * time.Millisecond)
+				// time.Sleep(5000 * time.Millisecond)
+
 				break
 			}
 		}
+
+		// waiting
+		host := params.SshHost
+		port := fmt.Sprint(params.SshPort)
+
+		for x := 0; x < 60; x++ {
+			time.Sleep(500 * time.Millisecond)
+
+			timeout := time.Second
+			conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+			if err != nil {
+				fmt.Println("Connecting error:", err)
+				return
+			}
+			if conn != nil {
+				defer conn.Close()
+				if config.Debug == true {
+					fmt.Println("Opened", net.JoinHostPort(host, port))
+				}
+				break
+			}
+		}
+
 	}
 
 	if params.State != "RUNNING" {
