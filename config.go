@@ -49,6 +49,9 @@ type Config struct {
 
 	// proxy
 	Proxy string
+
+	// api proxy
+	UrlFetch string
 }
 
 var config Config

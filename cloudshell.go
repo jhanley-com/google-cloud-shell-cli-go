@@ -59,6 +59,10 @@ func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShell
 	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default"
 	endpoint += "?alt=json"
 
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
+
 	req := HttpRequest.NewRequest()
 
 	req.SetHeaders(map[string]string{
@@ -123,6 +127,10 @@ func cloudshell_start(accessToken string) error {
 	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default"
 	endpoint += ":start"
 	endpoint += "?alt=json"
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
 
 	req := HttpRequest.NewRequest()
 

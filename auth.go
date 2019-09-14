@@ -182,6 +182,10 @@ func debug_PrintUserCredentials(creds UserCredentials) {
 func doRefresh(filename string) (string, string, bool) {
 	endpoint := "https://www.googleapis.com/oauth2/v4/token"
 
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
+
 	creds, err := loadUserCredentials(filename)
 
 	if err != nil {
@@ -282,6 +286,10 @@ func doRefresh(filename string) (string, string, bool) {
 func debug_displayAccessToken(accessToken string) {
 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
+
 	req := HttpRequest.NewRequest()
 
 	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
@@ -305,6 +313,10 @@ func debug_displayAccessToken(accessToken string) {
 
 func debug_displayUserInfo(accessToken string) {
 	endpoint := "https://www.googleapis.com/oauth2/v3/userinfo"
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
 
 	req := HttpRequest.NewRequest()
 
@@ -331,6 +343,10 @@ func debug_displayIDToken(accessToken, idToken string) {
 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
 	endpoint += "?id_token=" + idToken
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
 
 	req := HttpRequest.NewRequest()
 
@@ -371,6 +387,10 @@ func get_email_address(accessToken string) (string, error) {
 	//************************************************************
 
 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
 
 	req := HttpRequest.NewRequest()
 
