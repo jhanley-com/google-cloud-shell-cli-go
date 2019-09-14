@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os/exec"
 	"time"
@@ -40,17 +41,20 @@ func exec_winssh(params CloudShellEnv) {
 	// go ShadowSocks(sshHost, sshPort)
 
 	if config.Proxy == "v2ray" {
-		fmt.Println("Proxy: V2ray")
+		if config.Debug == true {
+			fmt.Println("Proxy: V2ray")
+		}
 
+		CheckUrlConfig(sshHost, sshPort)
 		V2ray(sshHost, sshPort)
-		// time.Sleep(2 * time.Second)
-		CheckPort(sshHost, sshPort)
+		CheckPort("127.0.0.1", "8022")
 	} else if config.Proxy == "shadowsocks" {
-		fmt.Println("Proxy: V2ray")
+		if config.Debug == true {
+			fmt.Println("Proxy: shadowsocks")
+		}
 
 		ShadowSocks(sshHost, sshPort)
-		// time.Sleep(2 * time.Second)
-		CheckPort(sshHost, sshPort)
+		CheckPort("127.0.0.1", "8022")
 	}
 
 	sshBinaryPath, err := exec.LookPath(config.AbsPath + "/ssh")
@@ -166,7 +170,7 @@ func ShadowSocks(sshHost string, sshPort string) {
 
 }
 
-func CheckPort(sshHost string, sshPort string) {
+func CheckUrlConfig(sshHost string, sshPort string) {
 	for x := 0; x < 60; x++ {
 		time.Sleep(500 * time.Millisecond)
 
@@ -179,13 +183,37 @@ func CheckPort(sshHost string, sshPort string) {
 		defer resp.Body.Close()
 
 		// if resp.StatusCode != http.StatusOK {
-		// 	// fmt.Println("Error: status code",resp.StatusCode)
-		// 	return
+		// 	if config.Debug == true {
+		// 		fmt.Println("Error: status code", resp.StatusCode)
+		// 	}
+		// 	continue
 		// }
 
 		if resp.StatusCode == 200 {
 			if config.Debug == true {
 				fmt.Println("CheckPort: status code", resp.StatusCode)
+			}
+			break
+		}
+	}
+}
+
+func CheckPort(host string, port string) {
+	for x := 0; x < 60; x++ {
+		time.Sleep(500 * time.Millisecond)
+
+		timeout := time.Second
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+		if err != nil {
+			if config.Debug == true {
+				fmt.Println("Connecting error:", err)
+			}
+			continue
+		}
+		if conn != nil {
+			defer conn.Close()
+			if config.Debug == true {
+				fmt.Println("Opened", net.JoinHostPort(host, port))
 			}
 			break
 		}

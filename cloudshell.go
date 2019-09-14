@@ -117,7 +117,7 @@ func cloudshell_start(accessToken string) error {
 	//************************************************************
 
 	if config.Debug == true {
-		fmt.Println("Starting Cloud Shell")
+		fmt.Println("Request users.environment.start")
 	}
 
 	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default"
@@ -271,7 +271,7 @@ func call_cloud_shell(accessToken string) {
 	if config.Command == CMD_INFO {
 		return
 	}
-	if params.State != "DISABLED" {
+	if params.State == "DISABLED" {
 		if config.Debug == true {
 			fmt.Println("CloudShell State:", params.State)
 		}
@@ -316,8 +316,10 @@ func call_cloud_shell(accessToken string) {
 			timeout := time.Second
 			conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
 			if err != nil {
-				fmt.Println("Connecting error:", err)
-				return
+				if config.Debug == true {
+					fmt.Println("Connecting error:", err)
+				}
+				continue
 			}
 			if conn != nil {
 				defer conn.Close()
