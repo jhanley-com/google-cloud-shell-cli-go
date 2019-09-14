@@ -104,6 +104,11 @@ func process_cmdline() {
 			break
 		}
 		// Proxy
+		if arg == "-proxy" || arg == "--proxy" {
+			config.Proxy = os.Args[x+1]
+			x++
+			continue
+		}
 		if arg == "-v2ray" || arg == "--v2" {
 			config.Proxy = "v2ray"
 			continue

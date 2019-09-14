@@ -55,6 +55,8 @@ func exec_winssh(params CloudShellEnv) {
 
 		ShadowSocks(sshHost, sshPort)
 		CheckPort("127.0.0.1", "8022")
+	} else if config.Proxy != "" {
+		config.sshFlags = append(config.sshFlags, "-o", "ProxyCommand=connect.exe -S "+config.Proxy+" %h %p")
 	}
 
 	sshBinaryPath, err := exec.LookPath(config.AbsPath + "/ssh")
