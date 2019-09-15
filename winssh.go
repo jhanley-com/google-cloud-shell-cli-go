@@ -89,12 +89,12 @@ func exec_winssh(params CloudShellEnv) {
 
 	// "curl -sSL https://raw.githubusercontent.com/ixiumu/google-cloud-shell-cli-go/patch-1/scripts-remote/heartbeats | sh & bash"
 	err = client.Shell()
-	if err != nil && err.Error() != "exit status 255" {
+	if err != nil && config.Debug == true && err.Error() != "exit status 255" {
 		fmt.Println("Failed to request shell - ", err)
 		// return
 	}
 
-	if config.Proxy != "" {
+	if config.Proxy == "v2ray" || config.Proxy == "shadowsocks" {
 		proxy.Process.Kill()
 	}
 

@@ -1,3 +1,7 @@
 {
-	"client_secrets_file": "<replace-with-full-path-to-your-client-secrets.json>"
+	"debug": false,
+	"ssh_flags":"",
+	"proxy": "",
+	"urlfetch": "",
+	"oauth_json_file": "default"
 }

@@ -1,13 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
 type ConfigJson struct {
-	ClientSecretsFile string `json:"client_secrets_file"`
+	ClientSecretsFile string `json:"oauth_json_file"`
+	SSHFlags          string `json:"ssh_flags"`
+	Debug             bool   `json:"debug"`
+	Proxy             string `json:"proxy"`
+	UrlFetch          string `json:"urlfetch"`
 }
 
 // Global Flags
@@ -68,29 +74,41 @@ func init_config() error {
 
 	config.AbsPath = path
 
-	// in, err := os.Open( config.AbsPath + "/config.json")
+	// config.json
+	in, err := os.Open(config.AbsPath + "/config.json")
 
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return err
-	// }
+	if err != nil {
+		// fmt.Println(err)
+	} else {
 
-	// defer in.Close()
+		defer in.Close()
 
-	// data, err := ioutil.ReadAll(in)
+		data, _ := ioutil.ReadAll(in)
 
-	// var configJson	ConfigJson
+		var configJson ConfigJson
 
-	// err = json.Unmarshal(data, &configJson)
+		err = json.Unmarshal(data, &configJson)
 
-	// if err != nil {
-	// 	fmt.Println("Error: Cannot unmarshal JSON: ", err)
-	// 	return err
-	// }
+		if err != nil {
+			fmt.Println("Error: Cannot unmarshal JSON: ", err)
+			return err
+		}
 
-	// config.ClientSecretsFile = configJson.ClientSecretsFile
+		config.ClientSecretsFile = configJson.ClientSecretsFile
 
-	// fmt.Println("Client Secrets File:", config.ClientSecretsFile)
+		if configJson.SSHFlags != "" && configJson.SSHFlags != "default" {
+			config.sshFlags = []string{configJson.SSHFlags}
+		}
+
+		config.Debug = configJson.Debug
+
+		if configJson.Proxy != "" {
+			config.Proxy = configJson.Proxy
+		}
+
+		config.UrlFetch = configJson.UrlFetch
+
+	}
 
 	process_cmdline()
 

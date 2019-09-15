@@ -334,6 +334,7 @@ func call_cloud_shell(accessToken string) {
 	}
 
 	if config.Command == CMD_WINSSH {
+		fmt.Println("Your Cloud Shell machine is RUNNING, connecting...")
 		exec_winssh(params)
 	}
 

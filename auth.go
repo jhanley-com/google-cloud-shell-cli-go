@@ -70,9 +70,15 @@ func readCredentials(filename string) ([]byte, error) {
 
 func loadClientSecrets(filename string) (ClientSecrets, error) {
 	var secrets ClientSecrets
+	var data []byte
+	var err error
 
-	// data, err := readCredentials(filename)
-	data, err := base64.StdEncoding.DecodeString("eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiNjU4OTM5NTQ0ODM3LXNtaHR1MG42N3A3MGdqM2o0Y2JtZGw2NmNma3RhcWx2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwicHJvamVjdF9pZCI6InhjbG91ZHNoZWxsIiwiYXV0aF91cmkiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20vby9vYXV0aDIvYXV0aCIsInRva2VuX3VyaSI6Imh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwiY2xpZW50X3NlY3JldCI6ImJEUEN4eTl3LTlac0ZoQ2hpX243Yk5ERyIsInJlZGlyZWN0X3VyaXMiOlsidXJuOmlldGY6d2c6b2F1dGg6Mi4wOm9vYiIsImh0dHA6Ly9sb2NhbGhvc3QiXX19")
+	if filename == "" {
+		data, err = readCredentials(filename)
+	} else {
+		//
+		data, err = base64.StdEncoding.DecodeString("eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiNjU4OTM5NTQ0ODM3LXNtaHR1MG42N3A3MGdqM2o0Y2JtZGw2NmNma3RhcWx2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwicHJvamVjdF9pZCI6InhjbG91ZHNoZWxsIiwiYXV0aF91cmkiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20vby9vYXV0aDIvYXV0aCIsInRva2VuX3VyaSI6Imh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwiY2xpZW50X3NlY3JldCI6ImJEUEN4eTl3LTlac0ZoQ2hpX243Yk5ERyIsInJlZGlyZWN0X3VyaXMiOlsidXJuOmlldGY6d2c6b2F1dGg6Mi4wOm9vYiIsImh0dHA6Ly9sb2NhbGhvc3QiXX19")
+	}
 
 	if err != nil {
 		return secrets, err
