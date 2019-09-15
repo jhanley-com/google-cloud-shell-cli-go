@@ -83,7 +83,10 @@ func init_config() error {
 	config.PluginsPath = path + "/plugins"
 
 	// config.json
-	in, err := os.Open(config.AbsPath + "/config.json")
+	in, err := os.Open(user_config_path("/config.json"))
+	if err != nil {
+		in, err = os.Open(config.AbsPath + "/config.json")
+	}
 
 	if err != nil {
 		// fmt.Println(err)
@@ -127,7 +130,7 @@ func init_config() error {
 	return nil
 }
 
-func user_credentials_path() string {
+func user_config_path(filename string) string {
 
 	// UserCredentials
 	user, err := user.Current()
@@ -143,7 +146,7 @@ func user_credentials_path() string {
 			}
 		}
 
-		return configPath + "user_credentials.json"
+		return configPath + filename
 	}
-	return "user_credentials.json"
+	return filename
 }

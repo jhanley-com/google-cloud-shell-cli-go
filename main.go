@@ -13,7 +13,7 @@ import (
 // This is the file where User Credentails are saved after authorization
 // This credentials are loaded on program start and refreshed if previously saved
 // ~/.config/cloudshell/user_credentials.json
-var SavedUserCredentials = user_credentials_path()
+var SavedUserCredentials = user_config_path("user_credentials.json")
 
 // If you change the scopes, delete the saved user_credentials.json
 var SCOPE = "https://www.googleapis.com/auth/cloud-platform openid https://www.googleapis.com/auth/userinfo.email"
