@@ -133,11 +133,11 @@ func process_cmdline() {
 			x++
 			continue
 		}
-		if arg == "-v2ray" || arg == "--v2" {
+		if arg == "-v2" || arg == "--v2ray" {
 			config.Proxy = "v2ray"
 			continue
 		}
-		if arg == "-shadowsocks" || arg == "--ss" {
+		if arg == "-ss" || arg == "--shadowsocks" {
 			config.Proxy = "shadowsocks"
 			continue
 		}

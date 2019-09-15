@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 )
@@ -55,8 +56,9 @@ type Config struct {
 	// Command line winscp options
 	winscpFlags []string
 
-	// ABS Path
-	AbsPath string
+	// Path
+	AbsPath     string
+	PluginsPath string
 
 	// proxy
 	Proxy string
@@ -78,6 +80,7 @@ func init_config() error {
 	path = filepath.Dir(path)
 
 	config.AbsPath = path
+	config.PluginsPath = path + "/plugins"
 
 	// config.json
 	in, err := os.Open(config.AbsPath + "/config.json")
@@ -122,4 +125,25 @@ func init_config() error {
 	process_cmdline()
 
 	return nil
+}
+
+func user_credentials_path() string {
+
+	// UserCredentials
+	user, err := user.Current()
+	if err == nil {
+		configPath := user.HomeDir + "/.config/cloudshell/"
+
+		_, err := os.Stat(configPath)
+		if err != nil {
+			err = os.Mkdir(configPath, os.ModePerm)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+
+		return configPath + "user_credentials.json"
+	}
+	return "user_credentials.json"
 }

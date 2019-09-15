@@ -59,7 +59,7 @@ func exec_winssh(params CloudShellEnv) {
 		config.sshFlags = append(config.sshFlags, "-o", "ProxyCommand=connect.exe -S "+config.Proxy+" %h %p")
 	}
 
-	sshBinaryPath, err := exec.LookPath(config.AbsPath + "/ssh")
+	sshBinaryPath, err := exec.LookPath(config.PluginsPath + "/ssh")
 	if err != nil {
 		sshBinaryPath, err = exec.LookPath("ssh")
 		if err != nil {
@@ -102,7 +102,7 @@ func exec_winssh(params CloudShellEnv) {
 
 func exec_vscode_ssh() {
 
-	sshBinaryPath, err := exec.LookPath(config.AbsPath + "/ssh")
+	sshBinaryPath, err := exec.LookPath(config.PluginsPath + "/ssh")
 	if err != nil {
 		sshBinaryPath, err = exec.LookPath("ssh")
 		if err != nil {
@@ -131,7 +131,7 @@ func exec_vscode_ssh() {
 }
 
 func V2ray(sshHost string, sshPort string) {
-	ssBinaryPath, err := exec.LookPath(config.AbsPath + "/v2ray/v2ray.exe")
+	ssBinaryPath, err := exec.LookPath(config.PluginsPath + "/v2ray/v2ray.exe")
 	if err != nil {
 		fmt.Println("Failed to create proxy client - ", err)
 		return
@@ -167,7 +167,7 @@ func ShadowSocks(sshHost string, sshPort string) {
 	ssArgs = append(ssArgs, "-s", sshHost)
 	ssArgs = append(ssArgs, "-p", sshPort)
 
-	ssBinaryPath, err := exec.LookPath(config.AbsPath + "/shadowsocks-libev/ss-local.exe")
+	ssBinaryPath, err := exec.LookPath(config.PluginsPath + "/shadowsocks-libev/ss-local.exe")
 
 	// fmt.Println(ssBinaryPath)
 
@@ -176,7 +176,7 @@ func ShadowSocks(sshHost string, sshPort string) {
 		return
 	}
 
-	ssPluginBinaryPath, err := exec.LookPath(config.AbsPath + "/shadowsocks-libev/v2ray-plugin.exe")
+	ssPluginBinaryPath, err := exec.LookPath(config.PluginsPath + "/shadowsocks-libev/v2ray-plugin.exe")
 	if err != nil {
 		fmt.Println("Failed to find proxy plugin - ", err)
 		return
