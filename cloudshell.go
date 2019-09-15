@@ -50,9 +50,6 @@ type CloudShellEnv struct {
 //******************************************************************************************
 
 func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShellEnv, error) {
-	//************************************************************
-	//
-	//************************************************************
 
 	var params CloudShellEnv
 
@@ -88,11 +85,8 @@ func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShell
 	}
 
 	if flag_info == true {
-		fmt.Println("")
-		fmt.Println("************************************************************")
 		fmt.Println("Cloud Shell Info:")
 		fmt.Println(string(body))
-		fmt.Println("************************************************************")
 	}
 
 	err = json.Unmarshal(body, &params)
@@ -134,16 +128,9 @@ func cloudshell_start(accessToken string) error {
 
 	req := HttpRequest.NewRequest()
 
-	// req.Header.Set("Authorization", "Bearer " + accessToken)
-	// req.Header.Set("X-Goog-User-Project", config.ProjectId)
-
 	req.SetHeaders(map[string]string{
 		"Authorization":       "Bearer " + accessToken,
 		"X-Goog-User-Project": config.ProjectId})
-
-	//************************************************************
-	//
-	//************************************************************
 
 	res, err := req.JSON().Post(endpoint, "{\"accessToken\": \""+accessToken+"\"}")
 
@@ -178,6 +165,7 @@ func cloudshell_start(accessToken string) error {
 
 	if params.Error.Code != 0 {
 		err = errors.New(params.Error.Message)
+		fmt.Println("Error Code:", params.Error.Code)
 		fmt.Println(err)
 		return err
 	}

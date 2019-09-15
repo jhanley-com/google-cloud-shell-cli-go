@@ -13,6 +13,7 @@ const (
 	CMD_INFO = iota
 	CMD_WINSSH
 	CMD_SSH
+	CMD_SSH_VSCODE
 	CMD_EXEC
 	CMD_UPLOAD
 	CMD_DOWNLOAD
@@ -88,15 +89,37 @@ func process_cmdline() {
 		}
 
 		// SSH args
-		if strings.HasPrefix(arg, "-o") {
+		if arg == "-o" {
 			config.sshFlags = append(config.sshFlags, "-o", os.Args[x+1])
 			x++
 			continue
 		}
-		if strings.HasPrefix(arg, "-D") {
+		if arg == "-D" {
+			// support vs code
+			if x == 1 && len(os.Args) == 5 && os.Args[4] == "bash" {
+
+				if os.Args[3] == "cloudshell" {
+					config.Debug = true
+
+					if isWindows() == true {
+						config.Command = CMD_WINSSH
+					} else {
+						config.Command = CMD_SSH
+					}
+				} else {
+					config.Command = CMD_SSH_VSCODE
+					config.sshFlags = append(config.sshFlags, "-D", os.Args[2], os.Args[3])
+					break
+				}
+			}
+
 			config.sshFlags = append(config.sshFlags, "-D", os.Args[x+1])
 			x++
 			continue
+		}
+		if arg == "-V" {
+			fmt.Println("OpenSSH_for_Windows_7.7p1, LibreSSL 2.6.5")
+			os.Exit(0)
 		}
 		// WINSCP args
 		if strings.HasPrefix(arg, "/rawsettings") {
@@ -237,6 +260,9 @@ func process_cmdline() {
 			}
 
 		default:
+			if config.Command != 0 {
+				return
+			}
 			if isWindows() == true {
 				fmt.Println("Error: expected a command (info, putty, ssh, exec, upload, download)")
 			} else {

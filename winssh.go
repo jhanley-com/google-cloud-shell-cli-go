@@ -100,6 +100,36 @@ func exec_winssh(params CloudShellEnv) {
 
 }
 
+func exec_vscode_ssh() {
+
+	sshBinaryPath, err := exec.LookPath(config.AbsPath + "/ssh")
+	if err != nil {
+		sshBinaryPath, err = exec.LookPath("ssh")
+		if err != nil {
+			if runtime.GOOS != "windows" {
+				sshBinaryPath = "ssh"
+			} else {
+				sshBinaryPath = "ssh.exe"
+			}
+		}
+	}
+
+	cmd := exec.Command(sshBinaryPath, config.sshFlags...)
+
+	// log.Debug(cmd)
+
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil && err.Error() != "exit status 255" {
+		fmt.Println("Failed to request shell - ", err)
+		// return
+	}
+
+}
+
 func V2ray(sshHost string, sshPort string) {
 	ssBinaryPath, err := exec.LookPath(config.AbsPath + "/v2ray/v2ray.exe")
 	if err != nil {

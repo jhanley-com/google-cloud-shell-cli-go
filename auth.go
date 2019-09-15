@@ -8,9 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -74,7 +72,7 @@ func loadClientSecrets(filename string) (ClientSecrets, error) {
 	var secrets ClientSecrets
 
 	// data, err := readCredentials(filename)
-	data, err := base64.StdEncoding.DecodeString("eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiNjU4OTM5NTQ0ODM3LXNtaHR1MG42N3A3MGdqM2o0Y2JtZGw2NmNma3RhcWx2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwicHJvamVjdF9pZCI6InhjbG91ZHNoZWxsIiwiYXV0aF91cmkiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20vby9vYXV0aDIvYXV0aCIsInRva2VuX3VyaSI6Imh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwiY2xpZW50X3NlY3JldCI6Imt0Y2MxdlNUVFphaHRQVlc4SUE4MzN2USIsInJlZGlyZWN0X3VyaXMiOlsidXJuOmlldGY6d2c6b2F1dGg6Mi4wOm9vYiIsImh0dHA6Ly9sb2NhbGhvc3QiXX19")
+	data, err := base64.StdEncoding.DecodeString("eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiNjU4OTM5NTQ0ODM3LXNtaHR1MG42N3A3MGdqM2o0Y2JtZGw2NmNma3RhcWx2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwicHJvamVjdF9pZCI6InhjbG91ZHNoZWxsIiwiYXV0aF91cmkiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20vby9vYXV0aDIvYXV0aCIsInRva2VuX3VyaSI6Imh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwiY2xpZW50X3NlY3JldCI6ImJEUEN4eTl3LTlac0ZoQ2hpX243Yk5ERyIsInJlZGlyZWN0X3VyaXMiOlsidXJuOmlldGY6d2c6b2F1dGg6Mi4wOm9vYiIsImh0dHA6Ly9sb2NhbGhvc3QiXX19")
 
 	if err != nil {
 		return secrets, err
@@ -440,10 +438,6 @@ func get_tokens() (string, string, error) {
 		return get_sa_tokens()
 	}
 
-	//************************************************************
-	//
-	//************************************************************
-
 	// fmt.Println("Auth:", config.Flags.Auth)
 	// fmt.Println("Login:", config.Flags.Login)
 
@@ -476,22 +470,6 @@ func get_tokens() (string, string, error) {
 	}
 
 	//************************************************************
-	// If we are running under Linux and the program xdg-open
-	// is not present, then we probably are not running under
-	// a desktop. An example would be Windows Linux Subsystem (WSL)
-	//************************************************************
-
-	var flag_desktop bool = true
-
-	if isWindows() == false {
-		_, err := exec.LookPath("dxg-open")
-
-		if err != nil {
-			flag_desktop = false
-		}
-	}
-
-	//************************************************************
 	// Build the authenticate URL
 	//************************************************************
 
@@ -504,114 +482,16 @@ func get_tokens() (string, string, error) {
 		url += "&login_hint=" + config.Flags.Login
 	}
 
-	if isWindows() == true {
-		url += "&redirect_uri=http://localhost:9000"
-	} else {
-		if flag_desktop == true {
-			url += "&redirect_uri=http://localhost:9000"
-		} else {
-			url += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+	url += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
 
-			return manualAuthentication(secrets, url)
-		}
-	}
-
-	//************************************************************
-	// The following code requires Python
-	//************************************************************
-
-	python_path, err := exec.LookPath("python3")
-
-	if err != nil {
-		python_path, err = exec.LookPath("python")
-
-		if err != nil {
-			fmt.Println("Error: Cannot find the python program to launch the internal web server for authentication")
-			return "", "", err
-		}
-	}
-
-	if config.Debug == true {
-		fmt.Println("Python Path:", python_path)
-	}
-
-	//************************************************************
-
-	if isWindows() == true {
-		chrome, err := FindChromeBrowser()
-
-		var cmd *exec.Cmd
-
-		if err == nil {
-			cmd = exec.Command(chrome, url)
-
-			err = cmd.Start()
-		} else {
-			cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
-		}
-
-		err = cmd.Start()
-	} else {
-		// This requires that Linux has a desktop
-		err = exec.Command("xdg-open", url).Start()
-	}
-
-	if err != nil {
-		fmt.Println(err)
-		return "", "", err
-	}
-
-	fmt.Println("Chrome running")
-
-	//************************************************************
-	// Start the web server
-	//
-	// FIX: This is coded in Python.
-	//************************************************************
-
-	fmt.Println("Web server starting")
-
-	var out []byte
-
-	out, err = exec.Command(python_path, "webserver.py").Output()
-
-	if err != nil {
-		fmt.Println("Error: Web server failed to start")
-		fmt.Println(err)
-		return "", "", err
-	}
-
-	if len(out) == 0 {
-		fmt.Println("************************************************************")
-		fmt.Println(out)
-		log.Fatal("Error: Missing OAuth2 Code")
-	}
-
-	if config.Debug == true {
-		fmt.Println("OAuth2 Code:", string(out))
-	}
-
-	auth_code := string(out)
-
-	return processAuthCode(secrets, auth_code)
+	return manualAuthentication(secrets, url)
 }
 
 func get_sa_tokens() (string, string, error) {
-	//************************************************************
-	//
-	//************************************************************
 
 	scope := "https://www.googleapis.com/auth/cloud-platform"
 
-	//************************************************************
-	//
-	//************************************************************
-
 	ctx := context.Background()
-
-	//************************************************************
-	//
-	//************************************************************
 
 	creds, err := google.FindDefaultCredentials(ctx, scope)
 
@@ -620,10 +500,6 @@ func get_sa_tokens() (string, string, error) {
 		return "", "", err
 	}
 
-	//************************************************************
-	//
-	//************************************************************
-
 	token, err := creds.TokenSource.Token()
 
 	if err != nil {
@@ -631,39 +507,12 @@ func get_sa_tokens() (string, string, error) {
 		return "", "", err
 	}
 
-	//************************************************************
-	//
-	//************************************************************
-
 	return token.AccessToken, "", nil
 }
 
-func FindChromeBrowser() (string, error) {
-	// Web browser to launch to authenticate
-	// This path is valid for Windows x64 only
-	// FIX - Test for Windows x86
-	var chrome1 = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-	var chrome2 = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-
-	if fileExists(chrome1) {
-		return chrome1, nil
-	}
-
-	if fileExists(chrome2) {
-		return chrome2, nil
-	}
-
-	err := errors.New("Cannot find Google Chrome Browser")
-
-	return "", err
-}
-
 func manualAuthentication(secrets ClientSecrets, url string) (string, string, error) {
-	fmt.Println("Go to the following link in your browser:")
-	fmt.Println()
-	fmt.Println(url)
-	fmt.Println()
-	fmt.Print("Enter verification code: ")
+
+	fmt.Print("Go to the following link in your browser:\n\n" + url + "\n\nEnter verification code: ")
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -680,7 +529,7 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 	content += "&client_secret=" + secrets.Installed.ClientSecret
 	content += "&code=" + auth_code
 	content += "&grant_type=authorization_code"
-	content += "&redirect_uri=http://localhost"
+	content += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
 	//************************************************************
 
 	endpoint := "https://www.googleapis.com/oauth2/v4/token"
