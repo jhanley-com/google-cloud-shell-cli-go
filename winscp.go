@@ -18,7 +18,7 @@ func exec_winscp(params CloudShellEnv) {
 	sshPort := fmt.Sprint(params.SshPort)
 	sshUrl := "sftp://" + sshUsername + "@" + sshHost + ":" + sshPort
 
-	args := append([]string{"/ini=nul", "/privatekey=" + key, "/hostkey=*", sshUrl}, config.sshFlags...)
+	args := append([]string{"/ini=nul", "/privatekey=" + key, "/hostkey=*", sshUrl}, config.winscpFlags...)
 
 	if config.Debug == true {
 		fmt.Println(key)

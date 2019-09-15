@@ -306,8 +306,8 @@ func call_cloud_shell(accessToken string) {
 		host := params.SshHost
 		port := fmt.Sprint(params.SshPort)
 
-		for x := 0; x < 60; x++ {
-			time.Sleep(500 * time.Millisecond)
+		for x := 0; x < 120; x++ {
+			time.Sleep(1000 * time.Millisecond)
 
 			timeout := time.Second
 			conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)

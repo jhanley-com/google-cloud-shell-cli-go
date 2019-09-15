@@ -123,7 +123,8 @@ func process_cmdline() {
 		}
 		// WINSCP args
 		if strings.HasPrefix(arg, "/rawsettings") {
-			config.sshFlags = append(config.sshFlags, os.Args[x:]...)
+			// config.sshFlags = append(config.sshFlags, os.Args[x:]...)
+			config.winscpFlags = os.Args[x:]
 			break
 		}
 		// Proxy

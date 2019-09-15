@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type ConfigJson struct {
@@ -14,6 +15,7 @@ type ConfigJson struct {
 	Debug             bool   `json:"debug"`
 	Proxy             string `json:"proxy"`
 	UrlFetch          string `json:"urlfetch"`
+	WinscpFlags       string `json:"winscp_flags"`
 }
 
 // Global Flags
@@ -49,6 +51,9 @@ type Config struct {
 
 	// Command line ssh options
 	sshFlags []string
+
+	// Command line winscp options
+	winscpFlags []string
 
 	// ABS Path
 	AbsPath string
@@ -107,6 +112,10 @@ func init_config() error {
 		}
 
 		config.UrlFetch = configJson.UrlFetch
+
+		if configJson.WinscpFlags != "" {
+			config.winscpFlags = append([]string{"/rawsettings"}, strings.Fields(configJson.WinscpFlags)...)
+		}
 
 	}
 
