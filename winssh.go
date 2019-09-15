@@ -223,15 +223,28 @@ func CheckPort(host string, port string) {
 }
 
 func (client *ExternalClient) HeartBeats() {
+
+	time.Sleep(10 * time.Second)
+
+	if config.Debug == true {
+		fmt.Print("Start Send HeartBeats")
+	}
+
 	for true {
-		time.Sleep(360 * time.Second)
 		args := append(client.BaseArgs, "curl -I -H \"Devshell-Vm-Ip-Address:${DEVSHELL_IP_ADDRESS}\" -X POST -s -w %{http_code} -o /dev/null ${DEVSHELL_SERVER_URL}/devshell/vmheartbeat")
+
 		cmd := getSSHCmd(client.BinaryPath, args...)
 		output, err := cmd.CombinedOutput()
+
 		if err != nil {
-			fmt.Println("HeartBeats error: ", err)
+			fmt.Print("HeartBeats error: ", err)
 		}
-		fmt.Print("HeartBeats: ", string(output))
+
+		if config.Debug == true {
+			fmt.Print("HeartBeats: ", string(output))
+		}
+
+		time.Sleep(360 * time.Second)
 	}
 }
 
@@ -262,7 +275,7 @@ var (
 		// "-o", "ConnectTimeout=5", // timeout after 5 seconds
 		"-o", "ControlMaster=no", // disable ssh multiplexing
 		"-o", "ControlPath=none",
-		// "-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
+		"-o", "LogLevel=quiet", // suppress "Warning: Permanently added '[localhost]:2022' (ECDSA) to the list of known hosts."
 		"-o", "PasswordAuthentication=no",
 		"-o", "ServerAliveInterval=30", // prevents connection to be dropped if command takes too long
 		"-o", "StrictHostKeyChecking=no",
