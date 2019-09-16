@@ -66,6 +66,11 @@ func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShell
 		"Authorization":       "Bearer " + accessToken,
 		"X-Goog-User-Project": config.ProjectId})
 
+	if config.Debug == true {
+		fmt.Println("Access Token:", accessToken)
+		fmt.Println("ProjectId:", config.ProjectId)
+	}
+
 	//************************************************************
 	//
 	//************************************************************

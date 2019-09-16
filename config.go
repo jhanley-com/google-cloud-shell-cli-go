@@ -12,6 +12,7 @@ import (
 
 type ConfigJson struct {
 	ClientSecretsFile string   `json:"oauth_json_file"`
+	UserCredentials   string   `json:"user_credentials_json_file"`
 	SSHFlags          []string `json:"ssh_flags"`
 	Debug             bool     `json:"debug"`
 	Proxy             string   `json:"proxy"`
@@ -107,6 +108,13 @@ func init_config() error {
 
 		if configJson.ClientSecretsFile != "" && configJson.ClientSecretsFile != "default" {
 			config.ClientSecretsFile = configJson.ClientSecretsFile
+		}
+
+		if configJson.UserCredentials != "" {
+			SavedUserCredentials = configJson.UserCredentials
+			if strings.HasPrefix(SavedUserCredentials, "./") {
+				SavedUserCredentials = config.AbsPath + "/" + SavedUserCredentials
+			}
 		}
 
 		if len(configJson.SSHFlags) > 0 {

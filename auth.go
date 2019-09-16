@@ -95,7 +95,7 @@ func loadClientSecrets(filename string) (ClientSecrets, error) {
 		return secrets, err
 	}
 
-	config.ProjectId = secrets.Installed.ProjectID
+	// config.ProjectId = secrets.Installed.ProjectID
 
 	// fmt.Println("ClientID:", secrets.Installed.ClientID)
 
@@ -292,6 +292,7 @@ func debug_displayAccessToken(accessToken string) {
 		return
 	}
 
+	fmt.Println("Token Info: ")
 	fmt.Println(string(body))
 }
 
@@ -470,7 +471,12 @@ func get_tokens() (string, error) {
 
 	url += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
 
-	return manualAuthentication(secrets, url)
+	token, err := manualAuthentication(secrets, url)
+
+	// Wait for token to take effect
+	time.Sleep(1000 * time.Millisecond)
+
+	return token, err
 }
 
 func get_sa_tokens() (string, error) {
