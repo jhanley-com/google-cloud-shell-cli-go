@@ -31,16 +31,16 @@ type ClientSecrets struct {
 }
 
 type UserCredentials struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
+	// ClientID     string `json:"client_id"`
+	// ClientSecret string `json:"client_secret"`
 	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
-	Type         string `json:"type"`
+	// Scope        string `json:"scope"`
+	// Type string `json:"type"`
 	// The following two fields are option and exist after authentication
 	AccessToken string `json:"access_token"`
-	IDToken     string `json:"id_token"`
-	Email       string `json:"email"`
-	ExpiresAt   int64  `json:"expires_at"`
+	// IDToken     string `json:"id_token"`
+	// Email       string `json:"email"`
+	ExpiresAt int64 `json:"expires"`
 }
 
 type OAuthTokens struct {
@@ -158,32 +158,7 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func debug_PrintUserCredentials(creds UserCredentials) {
-	fmt.Println("************************************************************")
-	fmt.Println("ClientID:", creds.ClientID)
-	fmt.Println("ClientSecret:", creds.ClientSecret)
-	fmt.Println("RefreshToken:", creds.RefreshToken)
-	fmt.Println("Scope:", creds.Scope)
-	fmt.Println("Type:", creds.Type)
-	fmt.Println("AccessToken:", creds.AccessToken)
-	fmt.Println("IDToken:", creds.IDToken)
-	fmt.Println("ExpiresAt:", creds.ExpiresAt)
-
-	fmt.Println("Expires At:", time.Unix(creds.ExpiresAt, 0))
-
-	var t time.Time = time.Unix(creds.ExpiresAt, 0)
-	var expires_in int64 = 0
-
-	if time.Now().Before(t) {
-		expires_in = int64(creds.ExpiresAt) - int64(time.Now().UTC().Unix())
-		fmt.Println("Expires In:", expires_in)
-	} else {
-		fmt.Println("Expires In: Expired")
-	}
-	fmt.Println("************************************************************")
-}
-
-func doRefresh(filename string) (string, string, bool) {
+func doRefresh(filename string) (string, bool) {
 	endpoint := "https://www.googleapis.com/oauth2/v4/token"
 
 	if config.UrlFetch != "" {
@@ -194,10 +169,8 @@ func doRefresh(filename string) (string, string, bool) {
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", false
+		return "", false
 	}
-
-	// debug_PrintUserCredentials(creds)
 
 	// We want an access token that is good for a while.
 	// Brand new tokens are valid for 3600 seconds
@@ -213,15 +186,30 @@ func doRefresh(filename string) (string, string, bool) {
 			fmt.Println("Saved credentials (Access Token) have not expired")
 		}
 
-		return creds.AccessToken, creds.IDToken, true
+		return creds.AccessToken, true
 	}
 
 	if config.Debug == true {
 		fmt.Println("Must Refresh Token")
 	}
 
-	content := "client_id=" + creds.ClientID + "&"
-	content += "client_secret=" + creds.ClientSecret + "&"
+	//************************************************************
+	// Load the Google Client Secrets
+	//************************************************************
+
+	secrets, err := loadClientSecrets(config.ClientSecretsFile)
+
+	if err != nil {
+		fmt.Println(err)
+		return "", false
+	}
+
+	//************************************************************
+	// Build the authenticate URL
+	//************************************************************
+
+	content := "client_id=" + secrets.Installed.ClientID + "&"
+	content += "client_secret=" + secrets.Installed.ClientSecret + "&"
 	content += "grant_type=refresh_token&"
 	content += "refresh_token=" + creds.RefreshToken
 
@@ -233,14 +221,14 @@ func doRefresh(filename string) (string, string, bool) {
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", false
+		return "", false
 	}
 
 	body, err := res.Body()
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", false
+		return "", false
 	}
 
 	var tokens OAuthTokens
@@ -249,42 +237,33 @@ func doRefresh(filename string) (string, string, bool) {
 
 	if err != nil {
 		fmt.Println("Error: Cannot unmarshal JSON: ", err)
-		return "", "", false
+		return "", false
 	}
 
-	var expires_at int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
-
-	/*
-		fmt.Println("AccessToken:", tokens.AccessToken)
-		fmt.Println("ExpiresIn:", tokens.ExpiresIn)
-		fmt.Println("ExpiresAt:", expires_at)
-		fmt.Println("Scope:", tokens.Scope)
-		fmt.Println("TokenType:", tokens.TokenType)
-		fmt.Println("IDToken:", tokens.IDToken)
-	*/
+	var expires int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
 
 	creds.AccessToken = tokens.AccessToken
-	creds.IDToken = tokens.IDToken
-	creds.ExpiresAt = expires_at
+	// creds.IDToken = tokens.IDToken
+	creds.ExpiresAt = expires
 
-	email, err := get_email_address(tokens.AccessToken)
+	// email, err := get_email_address(tokens.AccessToken)
 
-	if err == nil {
-		if config.Debug == true {
-			fmt.Println("Email:", email)
-		}
+	// if err == nil {
+	// 	if config.Debug == true {
+	// 		fmt.Println("Email:", email)
+	// 	}
 
-		creds.Email = email
-	}
+	// 	creds.Email = email
+	// }
 
 	err = saveUserCredentials(filename, creds)
 
 	if err != nil {
 		fmt.Println("Error: Cannot save user credentials: ", err)
-		return "", "", false
+		return "", false
 	}
 
-	return creds.AccessToken, creds.IDToken, true
+	return creds.AccessToken, true
 }
 
 func debug_displayAccessToken(accessToken string) {
@@ -343,98 +322,98 @@ func debug_displayUserInfo(accessToken string) {
 	fmt.Println(string(body))
 }
 
-func debug_displayIDToken(accessToken, idToken string) {
-	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
+// func debug_displayIDToken(accessToken, idToken string) {
+// 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
-	endpoint += "?id_token=" + idToken
+// 	endpoint += "?id_token=" + idToken
 
-	if config.UrlFetch != "" {
-		endpoint = config.UrlFetch + endpoint
-	}
+// 	if config.UrlFetch != "" {
+// 		endpoint = config.UrlFetch + endpoint
+// 	}
 
-	req := HttpRequest.NewRequest()
+// 	req := HttpRequest.NewRequest()
 
-	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
+// 	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
 
-	res, err := req.Get(endpoint)
+// 	res, err := req.Get(endpoint)
 
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
-	}
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return
+// 	}
 
-	body, err := res.Body()
+// 	body, err := res.Body()
 
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
-	}
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return
+// 	}
 
-	fmt.Println(string(body))
-}
+// 	fmt.Println(string(body))
+// }
 
-func get_email_address(accessToken string) (string, error) {
-	type Access_Token struct {
-		Azp            string `json:"azp"`
-		Aud            string `json:"aud"`
-		Sub            string `json:"sub"`
-		Scope          string `json:"scope"`
-		Exp            string `json:"exp"`
-		Expires_in     string `json:"expires_in"`
-		Email          string `json:"email"`
-		Email_verified string `json:"email_verified"`
-		Access_type    string `json:"access_type"`
-	}
+// func get_email_address(accessToken string) (string, error) {
+// 	type Access_Token struct {
+// 		Azp            string `json:"azp"`
+// 		Aud            string `json:"aud"`
+// 		Sub            string `json:"sub"`
+// 		Scope          string `json:"scope"`
+// 		Exp            string `json:"exp"`
+// 		Expires_in     string `json:"expires_in"`
+// 		Email          string `json:"email"`
+// 		Email_verified string `json:"email_verified"`
+// 		Access_type    string `json:"access_type"`
+// 	}
 
-	//************************************************************
-	//
-	//************************************************************
+// 	//************************************************************
+// 	//
+// 	//************************************************************
 
-	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
+// 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
-	if config.UrlFetch != "" {
-		endpoint = config.UrlFetch + endpoint
-	}
+// 	if config.UrlFetch != "" {
+// 		endpoint = config.UrlFetch + endpoint
+// 	}
 
-	req := HttpRequest.NewRequest()
+// 	req := HttpRequest.NewRequest()
 
-	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
+// 	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
 
-	//************************************************************
-	//
-	//************************************************************
+// 	//************************************************************
+// 	//
+// 	//************************************************************
 
-	res, err := req.Get(endpoint)
+// 	res, err := req.Get(endpoint)
 
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return "", err
-	}
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return "", err
+// 	}
 
-	body, err := res.Body()
+// 	body, err := res.Body()
 
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return "", err
-	}
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return "", err
+// 	}
 
-	//************************************************************
-	//
-	//************************************************************
+// 	//************************************************************
+// 	//
+// 	//************************************************************
 
-	var tokens Access_Token
+// 	var tokens Access_Token
 
-	err = json.Unmarshal(body, &tokens)
+// 	err = json.Unmarshal(body, &tokens)
 
-	if err != nil {
-		fmt.Println("Error: Cannot unmarshal JSON: ", err)
-		return "", err
-	}
+// 	if err != nil {
+// 		fmt.Println("Error: Cannot unmarshal JSON: ", err)
+// 		return "", err
+// 	}
 
-	return tokens.Email, nil
-}
+// 	return tokens.Email, nil
+// }
 
-func get_tokens() (string, string, error) {
+func get_tokens() (string, error) {
 	//************************************************************
 	// Note: Application Default Credentials only work on Compute
 	// Engine when interfacing with Cloud Shell.
@@ -449,17 +428,17 @@ func get_tokens() (string, string, error) {
 
 	if config.Flags.Auth == false {
 		if fileExists(SavedUserCredentials) {
-			accessToken, idToken, valid := doRefresh(SavedUserCredentials)
+			accessToken, valid := doRefresh(SavedUserCredentials)
 
 			if valid == true {
-				// fmt.Println("Access Token: ", accessToken)
+				fmt.Println("Access Token: ", accessToken)
 				// fmt.Println("ID Token:     ", idToken)
 
 				// debug_displayAccessToken(accessToken)
 				// debug_displayUserInfo(accessToken)
 				// debug_displayIDToken(accessToken, idToken)
 
-				return accessToken, idToken, nil
+				return accessToken, nil
 			}
 		}
 	}
@@ -472,7 +451,7 @@ func get_tokens() (string, string, error) {
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", err
+		return "", err
 	}
 
 	//************************************************************
@@ -493,30 +472,28 @@ func get_tokens() (string, string, error) {
 	return manualAuthentication(secrets, url)
 }
 
-func get_sa_tokens() (string, string, error) {
-
-	scope := "https://www.googleapis.com/auth/cloud-platform"
+func get_sa_tokens() (string, error) {
 
 	ctx := context.Background()
 
-	creds, err := google.FindDefaultCredentials(ctx, scope)
+	creds, err := google.FindDefaultCredentials(ctx, SCOPE)
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", err
+		return "", err
 	}
 
 	token, err := creds.TokenSource.Token()
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", err
+		return "", err
 	}
 
-	return token.AccessToken, "", nil
+	return token.AccessToken, nil
 }
 
-func manualAuthentication(secrets ClientSecrets, url string) (string, string, error) {
+func manualAuthentication(secrets ClientSecrets, url string) (string, error) {
 
 	fmt.Print("Go to the following link in your browser:\n\n" + url + "\n\nEnter verification code: ")
 
@@ -529,7 +506,7 @@ func manualAuthentication(secrets ClientSecrets, url string) (string, string, er
 	return processAuthCode(secrets, auth_code)
 }
 
-func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, error) {
+func processAuthCode(secrets ClientSecrets, auth_code string) (string, error) {
 	//************************************************************
 	content := "client_id=" + secrets.Installed.ClientID
 	content += "&client_secret=" + secrets.Installed.ClientSecret
@@ -548,14 +525,14 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	body, err := res.Body()
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	if config.Debug == true {
@@ -572,7 +549,7 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if err != nil {
 		fmt.Println("Error: Cannot unmarshal JSON: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	if config.Debug == true {
@@ -583,39 +560,39 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 		fmt.Println("Error: Cannot authenticate")
 		fmt.Println(tokens.Error)
 		fmt.Println(tokens.ErrorDescription)
-		return "", "", errors.New(tokens.ErrorDescription)
+		return "", errors.New(tokens.ErrorDescription)
 	}
 
 	//************************************************************
 	//
 	//************************************************************
 
-	var expires_at int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
+	var expires int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
 
 	var creds UserCredentials
 
-	creds.ClientID = secrets.Installed.ClientID
-	creds.ClientSecret = secrets.Installed.ClientSecret
+	// creds.ClientID = secrets.Installed.ClientID
+	// creds.ClientSecret = secrets.Installed.ClientSecret
 
 	creds.RefreshToken = tokens.RefreshToken
-	creds.Scope = tokens.Scope
-	creds.Type = tokens.TokenType
+	// creds.Scope = tokens.Scope
+	// creds.Type = tokens.TokenType
 
 	creds.AccessToken = tokens.AccessToken
-	creds.IDToken = tokens.IDToken
-	creds.ExpiresAt = expires_at
+	// creds.IDToken = tokens.IDToken
+	creds.ExpiresAt = expires
 
 	//************************************************************
 	//
 	//************************************************************
 
-	email, err := get_email_address(creds.AccessToken)
+	// email, err := get_email_address(creds.AccessToken)
 
-	if err == nil {
-		fmt.Println("Email:", email)
+	// if err == nil {
+	// 	fmt.Println("Email:", email)
 
-		creds.Email = email
-	}
+	// 	creds.Email = email
+	// }
 
 	//************************************************************
 	//
@@ -625,7 +602,7 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if err != nil {
 		fmt.Println("Error: Cannot save user credentials: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	//************************************************************
@@ -634,9 +611,9 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if config.Debug == true {
 		debug_displayAccessToken(creds.AccessToken)
-		debug_displayUserInfo(creds.AccessToken)
-		debug_displayIDToken(creds.AccessToken, creds.IDToken)
+		// debug_displayUserInfo(creds.AccessToken)
+		// debug_displayIDToken(creds.AccessToken, creds.IDToken)
 	}
 
-	return creds.AccessToken, creds.IDToken, nil
+	return creds.AccessToken, nil
 }

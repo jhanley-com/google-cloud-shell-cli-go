@@ -16,7 +16,8 @@ import (
 var SavedUserCredentials = user_config_path("user_credentials.json")
 
 // If you change the scopes, delete the saved user_credentials.json
-var SCOPE = "https://www.googleapis.com/auth/cloud-platform openid https://www.googleapis.com/auth/userinfo.email"
+// var SCOPE = "https://www.googleapis.com/auth/cloud-platform openid https://www.googleapis.com/auth/userinfo.email"
+var SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 
 func main() {
 	//************************************************************
@@ -63,7 +64,7 @@ func main() {
 	var accessToken = ""
 
 	// accessToken, idToken, err := get_tokens()
-	accessToken, _, err = get_tokens()
+	accessToken, err = get_tokens()
 
 	if err != nil {
 		os.Exit(1)
