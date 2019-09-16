@@ -431,7 +431,7 @@ func get_tokens() (string, error) {
 			accessToken, valid := doRefresh(SavedUserCredentials)
 
 			if valid == true {
-				fmt.Println("Access Token: ", accessToken)
+				// fmt.Println("Access Token: ", accessToken)
 				// fmt.Println("ID Token:     ", idToken)
 
 				// debug_displayAccessToken(accessToken)

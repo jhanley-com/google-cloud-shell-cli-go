@@ -11,12 +11,12 @@ import (
 )
 
 type ConfigJson struct {
-	ClientSecretsFile string `json:"oauth_json_file"`
-	SSHFlags          string `json:"ssh_flags"`
-	Debug             bool   `json:"debug"`
-	Proxy             string `json:"proxy"`
-	UrlFetch          string `json:"urlfetch"`
-	WinscpFlags       string `json:"winscp_flags"`
+	ClientSecretsFile string   `json:"oauth_json_file"`
+	SSHFlags          []string `json:"ssh_flags"`
+	Debug             bool     `json:"debug"`
+	Proxy             string   `json:"proxy"`
+	UrlFetch          string   `json:"urlfetch"`
+	WinscpFlags       string   `json:"winscp_flags"`
 }
 
 // Global Flags
@@ -105,10 +105,12 @@ func init_config() error {
 			return err
 		}
 
-		config.ClientSecretsFile = configJson.ClientSecretsFile
+		if configJson.ClientSecretsFile != "" && configJson.ClientSecretsFile != "default" {
+			config.ClientSecretsFile = configJson.ClientSecretsFile
+		}
 
-		if configJson.SSHFlags != "" && configJson.SSHFlags != "default" {
-			config.sshFlags = []string{configJson.SSHFlags}
+		if len(configJson.SSHFlags) > 0 {
+			config.sshFlags = configJson.SSHFlags
 		}
 
 		config.Debug = configJson.Debug
