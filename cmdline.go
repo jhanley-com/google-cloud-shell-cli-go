@@ -19,6 +19,7 @@ const (
 	CMD_DOWNLOAD
 	CMD_PUTTY
 	CMD_WINSCP
+	CREATE_PUBKEY
 )
 
 func process_cmdline() {
@@ -260,6 +261,10 @@ func process_cmdline() {
 				os.Exit(1)
 			}
 
+		case "push_pubkey":
+			config.Command = CREATE_PUBKEY
+			return
+
 		default:
 			if config.Command != 0 {
 				return
@@ -285,6 +290,7 @@ func cmd_help() {
 	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
 	fmt.Println("  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell")
 	fmt.Println("  cloudshell download src_file dst_file - Download from Cloud Shell to local file")
+	fmt.Println("  cloudshell push_pubkey                - Push your public key to Cloud Shell")
 	fmt.Println("")
 	fmt.Println("--debug - Turn on debug output")
 	fmt.Println("--adc  -  Use Application Default Credentials - Compute Engine only")

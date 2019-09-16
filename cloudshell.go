@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/kirinlabs/HttpRequest"
@@ -178,74 +181,156 @@ func cloudshell_start(accessToken string) error {
 	return nil
 }
 
-func env_get_ssh_pkey() (string, error) {
+func cloud_shell_create_publickeys(accessToken string) error {
+
+	fmt.Println("Pushing your public key to Cloud Shell...")
+
+	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default/publicKeys"
+	endpoint += "?alt=json"
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
+
+	req := HttpRequest.NewRequest()
+
+	req.SetHeaders(map[string]string{
+		"Authorization":       "Bearer " + accessToken,
+		"X-Goog-User-Project": config.ProjectId})
+
+	if config.Debug == true {
+		fmt.Println("Access Token:", accessToken)
+		fmt.Println("ProjectId:", config.ProjectId)
+	}
+
+	//************************************************************
+	//
+	//************************************************************
+
+	path, err := env_get_ssh_pub_key()
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	keyFields := strings.Fields(string(bytes))
+
+	pubkey := keyFields[1]
+
+	res, err := req.JSON().Post(endpoint, "{\"key\":{\"format\": \"SSH_RSA\",\"key\": \""+pubkey+"\"}}")
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+
+	body, err := res.Body()
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+
+	type Params struct {
+		Name   string `json:"name"`
+		Format string `json:"format"`
+		Key    string `json:"key"`
+		Error  struct {
+			Code    int32  `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	var params Params
+
+	err = json.Unmarshal(body, &params)
+
+	if err != nil {
+		fmt.Println("Error: Cannot unmarshal JSON: ", err)
+		return err
+	}
+
+	if config.Debug == true {
+		fmt.Println("Body:", params)
+	}
+
+	if params.Error.Code != 0 {
+		fmt.Println("Error:", params.Error.Message)
+	}
+
+	return nil
+}
+
+func env_get_ssh_key(filename string, ext string) (string, error) {
 	//*************************************************************
-	// Return the Google Cloud SSH Key for the current Windows User
+	// Return the Google Cloud SSH Key for the current User
 	//*************************************************************
 
-	path, err := get_home_directory()
+	// var path string
+	homepath, err := get_home_directory()
 
 	if err != nil {
 		fmt.Println(err)
 		return "", err
 	}
 
-	if isWindows() == true {
-		path += "\\.ssh\\google_compute_engine"
-	} else {
-		path += "/.ssh/google_compute_engine"
+	// if isWindows() == true {
+	// 	path = homepath + "\\.ssh\\" + filename + ext
+	// } else {
+	// 	path = homepath + "/.ssh/" + filename + ext
+	// }
+
+	path := homepath + "/.ssh/" + filename + ext
+	if fileExists(path) == false {
+		path = homepath + "/.ssh/id_rsa_cloudshell" + ext
+		if fileExists(path) == false {
+			path = homepath + "/.ssh/id_rsa" + ext
+			if fileExists(path) == false {
+				err = errors.New("SSH Key does not exist")
+				fmt.Println("Error:", err)
+				fmt.Println("File:", homepath+"/.ssh/id_rsa"+ext)
+				fmt.Println("Please create and upload SSH key first")
+				fmt.Println("\n\n$ ssh-keygen -t rsa -C \"Cloud Shell\"")
+				fmt.Println("$ cloudshell push_pubkey\n\n ")
+				return "", err
+			}
+		}
 	}
 
 	if config.Debug == true {
 		fmt.Println("Path:", path)
-	}
-
-	if fileExists(path) == false {
-		err = errors.New("Google SSH Key does not exist")
-		fmt.Println("Error:", err)
-		fmt.Println("File:", path)
-		return "", err
 	}
 
 	return path, nil
 }
 
+func env_get_ssh_pkey() (string, error) {
+	return env_get_ssh_key("google_compute_engine", "")
+}
+
 func env_get_ssh_ppk() (string, error) {
-	//*************************************************************
-	// Return the Google Cloud SSH Key for the current Windows User
-	//*************************************************************
+	return env_get_ssh_key("google_compute_engine", ".ppk")
+}
 
-	path, err := get_home_directory()
-
-	if err != nil {
-		fmt.Println(err)
-		return "", err
-	}
-
-	if isWindows() == true {
-		path += "\\.ssh\\google_compute_engine.ppk"
-	} else {
-		path += "/.ssh/google_compute_engine.ppk"
-	}
-
-	if config.Debug == true {
-		fmt.Println("Path:", path)
-	}
-
-	if fileExists(path) == false {
-		err = errors.New("Google SSH Key does not exist")
-		fmt.Println("Error:", err)
-		fmt.Println("File:", path)
-		return "", err
-	}
-
-	return path, nil
+func env_get_ssh_pub_key() (string, error) {
+	return env_get_ssh_key("google_compute_engine", ".pub")
 }
 
 func call_cloud_shell(accessToken string) {
 	//************************************************************
 	//
 	//************************************************************
+
+	if config.Command == CREATE_PUBKEY {
+		err := cloud_shell_create_publickeys(accessToken)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		os.Exit(0)
+	}
 
 	flag_info := false
 
