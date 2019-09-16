@@ -1,6 +1,6 @@
 {
 	"debug": false,
-	"ssh_flags": "",
+	"ssh_flags": ["-o","LocalForward 127.0.0.1:8080 127.0.0.1:8080","-o","LocalForward 127.0.0.1:8443 127.0.0.1:8443"],
 	"winscp_flags": "",
 	"proxy": "",
 	"urlfetch": "",
