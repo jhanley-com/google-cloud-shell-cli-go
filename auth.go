@@ -474,7 +474,7 @@ func get_tokens() (string, error) {
 	token, err := manualAuthentication(secrets, url)
 
 	// Wait for token to take effect
-	time.Sleep(1000 * time.Millisecond)
+	// time.Sleep(1000 * time.Millisecond)
 
 	return token, err
 }
