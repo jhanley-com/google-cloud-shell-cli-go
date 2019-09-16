@@ -276,10 +276,10 @@ func process_cmdline() {
 
 func cmd_help() {
 	fmt.Println("Usage: cloudshell [command]")
-	fmt.Println("  cloudshell                            - display Cloud Shell information")
 	fmt.Println("  cloudshell info                       - display Cloud Shell information")
 	if isWindows() == true {
 		fmt.Println("  cloudshell putty                      - connect to Cloud Shell with Putty")
+		fmt.Println("  cloudshell winscp                     - connect to Cloud Shell with WinSCP")
 	}
 	fmt.Println("  cloudshell ssh                        - connect to Cloud Shell with SSH")
 	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
