@@ -114,7 +114,9 @@ func cloudshell_start(accessToken string) error {
 	//
 	//************************************************************
 
-	fmt.Println("Starting Cloud Shell")
+	if config.Debug == true {
+		fmt.Println("Starting Cloud Shell")
+	}
 
 	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default"
 	endpoint += ":start"
@@ -147,11 +149,13 @@ func cloudshell_start(accessToken string) error {
 		return err
 	}
 
-	fmt.Println("")
-	fmt.Println("************************************************************")
-	fmt.Println("Cloud Shell Info:")
-	fmt.Println(string(body))
-	fmt.Println("************************************************************")
+	if config.Debug == true {
+		fmt.Println("")
+		fmt.Println("************************************************************")
+		fmt.Println("Cloud Shell Info:")
+		fmt.Println(string(body))
+		fmt.Println("************************************************************")
+	}
 
 	var params CloudShellEnv
 
