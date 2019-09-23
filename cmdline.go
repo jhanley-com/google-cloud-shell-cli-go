@@ -10,7 +10,8 @@ import (
 
 // Commands for this program
 const (
-	CMD_INFO = iota
+	CMD_NONE = iota
+	CMD_INFO
 	CMD_PUTTY
 	CMD_SSH
 	CMD_INLINE_SSH
@@ -21,13 +22,15 @@ const (
 )
 
 func process_cmdline() {
+	config.Command = CMD_NONE
+
 	if len(os.Args) < 2 {
 		cmd_help()
 		os.Exit(0)
 	}
 
 	for _, arg := range os.Args {
-		if arg == "--help" {
+		if arg == "-help" || arg == "--help" {
 			cmd_help()
 			os.Exit(0)
 		}
@@ -87,12 +90,22 @@ func process_cmdline() {
 			continue
 		}
 
+		if strings.HasPrefix(arg, "-") {
+			fmt.Println("Error: Unknown option: " + arg)
+			os.Exit(1)
+		}
+
 		args = append(args, arg)
 	}
 
 	// fmt.Println("Debug:", config.Debug)
 	// fmt.Println("Auth:", config.Flags.Auth)
 	// fmt.Println("Login:", config.Flags.Login)
+
+	if len(args) == 0 {
+		cmd_help()
+		os.Exit(0)
+	}
 
 	for x := 0; x < len(args); x++ {
 		arg := args[x]
@@ -192,8 +205,13 @@ func process_cmdline() {
 			}
 
 		default:
+			if config.Command != CMD_NONE {
+				fmt.Println("Error: Unknown command line argument: ", arg)
+				os.Exit(1)
+			}
+
 			if isWindows() == true {
-				fmt.Println("Error: expected a command (info, putty, ssh, exec, upload, download)")
+				fmt.Println("Error: expected a command (info, putty, ssh, winssh, exec, upload, download)")
 			} else {
 				fmt.Println("Error: expected a command (info, ssh, exec, upload, download)")
 			}
@@ -204,7 +222,7 @@ func process_cmdline() {
 
 func cmd_help() {
 	fmt.Println("Usage: cloudshell [command]")
-	fmt.Println("  cloudshell                            - display Cloud Shell information")
+	fmt.Println("  cloudshell                            - display cloudshell program help")
 	fmt.Println("  cloudshell info                       - display Cloud Shell information")
 	if isWindows() == true {
 		fmt.Println("  cloudshell putty                      - connect to Cloud Shell with Putty")

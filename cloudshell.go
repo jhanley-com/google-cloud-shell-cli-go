@@ -246,14 +246,6 @@ func call_cloud_shell(accessToken string) {
 
 	flag_info := false
 
-	if config.Command == CMD_EXEC {
-		flag_info = false
-	}
-
-	if config.Debug == true {
-		flag_info = true
-	}
-
 	if config.Command == CMD_INFO {
 		flag_info = true
 	}
