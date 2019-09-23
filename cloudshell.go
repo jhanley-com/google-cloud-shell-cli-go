@@ -293,7 +293,11 @@ func call_cloud_shell(accessToken string) {
 			}
 
 			if params.State == "RUNNING" {
-				time.Sleep(500 * time.Millisecond)
+				// FIX
+				// Sleep to allow the CloudShell VM to start responding
+				// I don't know how long this really takes
+				// Perhaps a connection attempt is required
+				time.Sleep(5000 * time.Millisecond)
 				break;
 			}
 		}
