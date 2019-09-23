@@ -18,18 +18,22 @@ Notes:
 
 <pre>
 Usage: cloudshell [command]
-  cloudshell                            - display Cloud Shell information
+  cloudshell                            - display cloudshell program help
   cloudshell info                       - display Cloud Shell information
   cloudshell putty                      - connect to Cloud Shell with Putty
   cloudshell ssh                        - connect to Cloud Shell with SSH
+  cloudshell winssh                     - connect to Cloud Shell with Windows OpenSSH
   cloudshell exec "command"             - Execute remote command on Cloud Shell
   cloudshell upload src_file dst_file   - Upload local file to Cloud Shell
   cloudshell download src_file dst_file - Download from Cloud Shell to local file
+  cloudshell benchmark download         - Benchmark download speed from Cloud Shell
+  cloudshell benchmark upload           - Benchmark upload speed from Cloud Shell
 
 --debug - Turn on debug output
 --adc  -  Use Application Default Credentials - Compute Engine only
 --auth  - (re)Authenticate ignoring user_credentials.json
 --login - Specify an email address as a login hint
+
 </pre>
 
 # Getting Started
