@@ -41,6 +41,9 @@ type Config struct {
 
 	// Command line global options
 	Flags			FlagsStruct
+
+	// Commands "benchmark download" and "benchark upload"
+	benchmark_size		int64
 }
 
 var config Config

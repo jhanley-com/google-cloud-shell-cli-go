@@ -6,8 +6,11 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 func sftp_download(params CloudShellEnv) {
@@ -150,4 +153,25 @@ func sftp_upload(params CloudShellEnv) {
 		log.Fatal(err)
 	}
 	fmt.Printf("%d bytes copied\n", bytes)
+}
+
+func print_transfer_stats(total_time time.Duration, bytes int64, flag bool) {
+	// total_time is nanoseconds
+
+	if flag == false {
+		return
+	}
+
+	// Convert to milliseconds
+	ms := int64(total_time) / 1000000
+
+	if (bytes == 0) {
+		fmt.Printf("%v bytes in %s - Speed 0 KBS\n", bytes, total_time)
+	} else {
+		kbs := bytes / ms
+
+		p := message.NewPrinter(language.English)
+
+		fmt.Printf("%v bytes in %s - Speed %s KBS\n", p.Sprintf("%d", bytes), total_time, p.Sprintf("%d", kbs))
+	}
 }

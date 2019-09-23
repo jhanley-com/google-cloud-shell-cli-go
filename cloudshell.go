@@ -327,4 +327,12 @@ func call_cloud_shell(accessToken string) {
 	if config.Command == CMD_UPLOAD {
 		sftp_upload(params)
 	}
+
+	if config.Command == CMD_BENCHMARK_DOWNLOAD {
+		sftp_benchmark_download(params)
+	}
+
+	if config.Command == CMD_BENCHMARK_UPLOAD {
+		sftp_benchmark_upload(params)
+	}
 }

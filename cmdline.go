@@ -19,6 +19,8 @@ const (
 	CMD_EXEC
 	CMD_UPLOAD
 	CMD_DOWNLOAD
+	CMD_BENCHMARK_DOWNLOAD
+	CMD_BENCHMARK_UPLOAD
 )
 
 func process_cmdline() {
@@ -204,6 +206,31 @@ func process_cmdline() {
 				fmt.Println("DstFile:", config.DstFile)
 			}
 
+		case "benchmark":
+			if len(args) < 2 {
+				fmt.Println("Error: expected download or upload option")
+				os.Exit(1)
+			}
+
+			x++
+
+			subcmd := args[x]
+
+			switch subcmd {
+			case "download":
+				config.Command = CMD_BENCHMARK_DOWNLOAD
+				config.benchmark_size = 128 * 1024
+				config.benchmark_size = 10240 * 1024
+
+			case "upload":
+				config.Command = CMD_BENCHMARK_UPLOAD
+				config.benchmark_size = 10240 * 1024
+
+			default:
+				fmt.Println("Error: expected a sub command (download, upload)")
+				os.Exit(1)
+			}
+
 		default:
 			if config.Command != CMD_NONE {
 				fmt.Println("Error: Unknown command line argument: ", arg)
@@ -232,6 +259,8 @@ func cmd_help() {
 	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
 	fmt.Println("  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell")
 	fmt.Println("  cloudshell download src_file dst_file - Download from Cloud Shell to local file")
+	fmt.Println("  cloudshell benchmark download         - Benchmark download speed from Cloud Shell")
+	fmt.Println("  cloudshell benchmark upload           - Benchmark upload speed from Cloud Shell")
 	fmt.Println("")
 	fmt.Println("--debug - Turn on debug output")
 	fmt.Println("--adc  -  Use Application Default Credentials - Compute Engine only")
