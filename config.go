@@ -5,72 +5,158 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
 )
 
 type ConfigJson struct {
-	ClientSecretsFile	string   `json:"client_secrets_file"`
+	ClientSecretsFile string   `json:"oauth_json_file"`
+	UserCredentials   string   `json:"user_credentials_json_file"`
+	SSHFlags          []string `json:"ssh_flags"`
+	Debug             bool     `json:"debug"`
+	Proxy             string   `json:"proxy"`
+	UrlFetch          string   `json:"urlfetch"`
+	WinscpFlags       string   `json:"winscp_flags"`
 }
 
 // Global Flags
 type FlagsStruct struct {
-	Adc		bool
-	Auth		bool
-	Login		string
-	Info		bool
+	Adc   bool
+	Auth  bool
+	Login string
+	Info  bool
 }
 
 type Config struct {
 	// Global debug flag
-	Debug			bool
+	Debug bool
 
-	UseAdcCredentials	bool
+	UseAdcCredentials bool
 
-	ProjectId		string
+	ProjectId string
 
-	ClientSecretsFile	string
+	ClientSecretsFile string
 
 	// Command to execute
-	Command			int
+	Command int
 
 	// Command "exec"
-	RemoteCommand		string
+	RemoteCommand string
 
 	// Commands "download" and "upload"
-	SrcFile			string
-	DstFile			string
+	SrcFile string
+	DstFile string
 
 	// Command line global options
-	Flags			FlagsStruct
+	Flags FlagsStruct
+
+	// Command line ssh options
+	sshFlags []string
+
+	// Command line winscp options
+	winscpFlags []string
+
+	// Path
+	AbsPath     string
+	PluginsPath string
+
+	// proxy
+	Proxy string
+
+	// api proxy
+	UrlFetch string
 }
 
 var config Config
 
 func init_config() error {
-	in, err := os.Open("config.json")
 
+	// path, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	path, err := os.Executable()
 	if err != nil {
 		fmt.Println(err)
-		return err
 	}
 
-	defer in.Close()
+	path = filepath.Dir(path)
 
-	data, err := ioutil.ReadAll(in)
+	config.AbsPath = path
+	config.PluginsPath = path + "/plugins"
 
-	var configJson	ConfigJson
-
-	err = json.Unmarshal(data, &configJson)
+	// config.json
+	in, err := os.Open(user_config_path("/config.json"))
+	if err != nil {
+		in, err = os.Open(config.AbsPath + "/config.json")
+	}
 
 	if err != nil {
-		fmt.Println("Error: Cannot unmarshal JSON: ", err)
-		return err
+		// fmt.Println(err)
+	} else {
+
+		defer in.Close()
+
+		data, _ := ioutil.ReadAll(in)
+
+		var configJson ConfigJson
+
+		err = json.Unmarshal(data, &configJson)
+
+		if err != nil {
+			fmt.Println("Error: Cannot unmarshal JSON: ", err)
+			return err
+		}
+
+		if configJson.ClientSecretsFile != "" && configJson.ClientSecretsFile != "default" {
+			config.ClientSecretsFile = configJson.ClientSecretsFile
+		}
+
+		if configJson.UserCredentials != "" {
+			SavedUserCredentials = configJson.UserCredentials
+			if strings.HasPrefix(SavedUserCredentials, "./") {
+				SavedUserCredentials = config.AbsPath + "/" + SavedUserCredentials
+			}
+		}
+
+		if len(configJson.SSHFlags) > 0 {
+			config.sshFlags = configJson.SSHFlags
+		}
+
+		config.Debug = configJson.Debug
+
+		if configJson.Proxy != "" {
+			config.Proxy = configJson.Proxy
+		}
+
+		config.UrlFetch = configJson.UrlFetch
+
+		if configJson.WinscpFlags != "" {
+			config.winscpFlags = append([]string{"/rawsettings"}, strings.Fields(configJson.WinscpFlags)...)
+		}
+
 	}
-
-	config.ClientSecretsFile = configJson.ClientSecretsFile
-
-	// fmt.Println("Client Secrets File:", config.ClientSecretsFile)
 
 	process_cmdline()
 
 	return nil
+}
+
+func user_config_path(filename string) string {
+
+	// UserCredentials
+	user, err := user.Current()
+	if err == nil {
+		configPath := user.HomeDir + "/.config/cloudshell/"
+
+		_, err := os.Stat(configPath)
+		if err != nil {
+			err = os.Mkdir(configPath, os.ModePerm)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+
+		return configPath + filename
+	}
+	return filename
 }

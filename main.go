@@ -12,11 +12,12 @@ import (
 
 // This is the file where User Credentails are saved after authorization
 // This credentials are loaded on program start and refreshed if previously saved
-var SavedUserCredentials = "user_credentials.json"
-var SavedAdcCredentials = "adc_credentials.json"
+// ~/.config/cloudshell/user_credentials.json
+var SavedUserCredentials = user_config_path("user_credentials.json")
 
 // If you change the scopes, delete the saved user_credentials.json
-var SCOPE = "https://www.googleapis.com/auth/cloud-platform openid https://www.googleapis.com/auth/userinfo.email"
+// var SCOPE = "https://www.googleapis.com/auth/cloud-platform openid https://www.googleapis.com/auth/userinfo.email"
+var SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 
 func main() {
 	//************************************************************
@@ -26,6 +27,12 @@ func main() {
 	err := init_config()
 
 	if err != nil {
+		os.Exit(1)
+	}
+
+	// vscode
+	if config.Command == CMD_SSH_VSCODE {
+		exec_vscode_ssh()
 		os.Exit(1)
 	}
 
@@ -57,7 +64,7 @@ func main() {
 	var accessToken = ""
 
 	// accessToken, idToken, err := get_tokens()
-	accessToken, _, err = get_tokens()
+	accessToken, err = get_tokens()
 
 	if err != nil {
 		os.Exit(1)

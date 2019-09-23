@@ -4,7 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"os"
+	"strings"
 	"time"
+
 	"github.com/kirinlabs/HttpRequest"
 )
 
@@ -28,17 +33,17 @@ import (
 //******************************************************************************************
 
 type CloudShellEnv struct {
-	Name                 string   `json:"name"`
-	Id                   string   `json:"id"`
-	DockerImage          string   `json:"dockerImage"`
-	State                string   `json:"state"`
-	SshUsername          string   `json:"sshUsername"`
-	SshHost              string   `json:"sshHost"`
-	SshPort              int32   `json:"sshPort"`
-	Error struct {
-		Code              int32   `json:"code"`
-		Message           string  `json:"message"`
-		Status            string  `json:"status"`
+	Name        string `json:"name"`
+	Id          string `json:"id"`
+	DockerImage string `json:"dockerImage"`
+	State       string `json:"state"`
+	SshUsername string `json:"sshUsername"`
+	SshHost     string `json:"sshHost"`
+	SshPort     int32  `json:"sshPort"`
+	Error       struct {
+		Code    int32  `json:"code"`
+		Message string `json:"message"`
+		Status  string `json:"status"`
 	} `json:"error"`
 }
 
@@ -48,20 +53,26 @@ type CloudShellEnv struct {
 //******************************************************************************************
 
 func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShellEnv, error) {
-	//************************************************************
-	//
-	//************************************************************
 
 	var params CloudShellEnv
 
 	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default"
 	endpoint += "?alt=json"
 
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
+
 	req := HttpRequest.NewRequest()
 
 	req.SetHeaders(map[string]string{
-			"Authorization": "Bearer " + accessToken,
-			"X-Goog-User-Project": config.ProjectId})
+		"Authorization":       "Bearer " + accessToken,
+		"X-Goog-User-Project": config.ProjectId})
+
+	if config.Debug == true {
+		fmt.Println("Access Token:", accessToken)
+		fmt.Println("ProjectId:", config.ProjectId)
+	}
 
 	//************************************************************
 	//
@@ -82,11 +93,8 @@ func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShell
 	}
 
 	if flag_info == true {
-		fmt.Println("")
-		fmt.Println("************************************************************")
 		fmt.Println("Cloud Shell Info:")
 		fmt.Println(string(body))
-		fmt.Println("************************************************************")
 	}
 
 	err = json.Unmarshal(body, &params)
@@ -114,26 +122,25 @@ func cloudshell_start(accessToken string) error {
 	//
 	//************************************************************
 
-	fmt.Println("Starting Cloud Shell")
+	if config.Debug == true {
+		fmt.Println("Request users.environment.start")
+	}
 
 	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default"
 	endpoint += ":start"
 	endpoint += "?alt=json"
 
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
+
 	req := HttpRequest.NewRequest()
 
-	// req.Header.Set("Authorization", "Bearer " + accessToken)
-	// req.Header.Set("X-Goog-User-Project", config.ProjectId)
-
 	req.SetHeaders(map[string]string{
-			"Authorization": "Bearer " + accessToken,
-			"X-Goog-User-Project": config.ProjectId})
+		"Authorization":       "Bearer " + accessToken,
+		"X-Goog-User-Project": config.ProjectId})
 
-	//************************************************************
-	//
-	//************************************************************
-
-	res, err := req.Post(endpoint)
+	res, err := req.JSON().Post(endpoint, "{\"accessToken\": \""+accessToken+"\"}")
 
 	if err != nil {
 		fmt.Println("Error: ", err)
@@ -147,11 +154,13 @@ func cloudshell_start(accessToken string) error {
 		return err
 	}
 
-	fmt.Println("")
-	fmt.Println("************************************************************")
-	fmt.Println("Cloud Shell Info:")
-	fmt.Println(string(body))
-	fmt.Println("************************************************************")
+	if config.Debug == true {
+		fmt.Println("")
+		fmt.Println("************************************************************")
+		fmt.Println("Cloud Shell Info:")
+		fmt.Println(string(body))
+		fmt.Println("************************************************************")
+	}
 
 	var params CloudShellEnv
 
@@ -164,6 +173,7 @@ func cloudshell_start(accessToken string) error {
 
 	if params.Error.Code != 0 {
 		err = errors.New(params.Error.Message)
+		fmt.Println("Error Code:", params.Error.Code)
 		fmt.Println(err)
 		return err
 	}
@@ -171,74 +181,156 @@ func cloudshell_start(accessToken string) error {
 	return nil
 }
 
-func env_get_ssh_pkey() (string, error) {
+func cloud_shell_create_publickeys(accessToken string) error {
+
+	fmt.Println("Pushing your public key to Cloud Shell...")
+
+	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default/publicKeys"
+	endpoint += "?alt=json"
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
+
+	req := HttpRequest.NewRequest()
+
+	req.SetHeaders(map[string]string{
+		"Authorization":       "Bearer " + accessToken,
+		"X-Goog-User-Project": config.ProjectId})
+
+	if config.Debug == true {
+		fmt.Println("Access Token:", accessToken)
+		fmt.Println("ProjectId:", config.ProjectId)
+	}
+
+	//************************************************************
+	//
+	//************************************************************
+
+	path, err := env_get_ssh_pub_key()
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	keyFields := strings.Fields(string(bytes))
+
+	pubkey := keyFields[1]
+
+	res, err := req.JSON().Post(endpoint, "{\"key\":{\"format\": \"SSH_RSA\",\"key\": \""+pubkey+"\"}}")
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+
+	body, err := res.Body()
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return err
+	}
+
+	type Params struct {
+		Name   string `json:"name"`
+		Format string `json:"format"`
+		Key    string `json:"key"`
+		Error  struct {
+			Code    int32  `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	var params Params
+
+	err = json.Unmarshal(body, &params)
+
+	if err != nil {
+		fmt.Println("Error: Cannot unmarshal JSON: ", err)
+		return err
+	}
+
+	if config.Debug == true {
+		fmt.Println("Body:", params)
+	}
+
+	if params.Error.Code != 0 {
+		fmt.Println("Error:", params.Error.Message)
+	}
+
+	return nil
+}
+
+func env_get_ssh_key(filename string, ext string) (string, error) {
 	//*************************************************************
-	// Return the Google Cloud SSH Key for the current Windows User
+	// Return the Google Cloud SSH Key for the current User
 	//*************************************************************
 
-	path, err := get_home_directory()
+	// var path string
+	homepath, err := get_home_directory()
 
 	if err != nil {
 		fmt.Println(err)
 		return "", err
 	}
 
-	if isWindows() == true {
-		path += "\\.ssh\\google_compute_engine"
-	} else {
-		path += "/.ssh/google_compute_engine"
+	// if isWindows() == true {
+	// 	path = homepath + "\\.ssh\\" + filename + ext
+	// } else {
+	// 	path = homepath + "/.ssh/" + filename + ext
+	// }
+
+	path := homepath + "/.ssh/" + filename + ext
+	if fileExists(path) == false {
+		path = homepath + "/.ssh/id_rsa_cloudshell" + ext
+		if fileExists(path) == false {
+			path = homepath + "/.ssh/id_rsa" + ext
+			if fileExists(path) == false {
+				err = errors.New("SSH Key does not exist")
+				fmt.Println("Error:", err)
+				fmt.Println("File:", homepath+"/.ssh/id_rsa"+ext)
+				fmt.Println("Please create and upload SSH key first")
+				fmt.Println("\n\n$ ssh-keygen -t rsa -C \"Cloud Shell\"")
+				fmt.Println("$ cloudshell push_pubkey\n\n ")
+				return "", err
+			}
+		}
 	}
 
 	if config.Debug == true {
 		fmt.Println("Path:", path)
-	}
-
-	if fileExists(path) == false {
-		err = errors.New("Google SSH Key does not exist")
-		fmt.Println("Error:", err)
-		fmt.Println("File:", path)
-		return "", err
 	}
 
 	return path, nil
 }
 
+func env_get_ssh_pkey() (string, error) {
+	return env_get_ssh_key("google_compute_engine", "")
+}
+
 func env_get_ssh_ppk() (string, error) {
-	//*************************************************************
-	// Return the Google Cloud SSH Key for the current Windows User
-	//*************************************************************
+	return env_get_ssh_key("google_compute_engine", ".ppk")
+}
 
-	path, err := get_home_directory()
-
-	if err != nil {
-		fmt.Println(err)
-		return "", err
-	}
-
-	if isWindows() == true {
-		path += "\\.ssh\\google_compute_engine.ppk"
-	} else {
-		path += "/.ssh/google_compute_engine.ppk"
-	}
-
-	if config.Debug == true {
-		fmt.Println("Path:", path)
-	}
-
-	if fileExists(path) == false {
-		err = errors.New("Google SSH Key does not exist")
-		fmt.Println("Error:", err)
-		fmt.Println("File:", path)
-		return "", err
-	}
-
-	return path, nil
+func env_get_ssh_pub_key() (string, error) {
+	return env_get_ssh_key("google_compute_engine", ".pub")
 }
 
 func call_cloud_shell(accessToken string) {
 	//************************************************************
 	//
 	//************************************************************
+
+	if config.Command == CREATE_PUBKEY {
+		err := cloud_shell_create_publickeys(accessToken)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		os.Exit(0)
+	}
 
 	flag_info := false
 
@@ -265,9 +357,12 @@ func call_cloud_shell(accessToken string) {
 	if config.Command == CMD_INFO {
 		return
 	}
-
 	if params.State == "DISABLED" {
-		fmt.Println("CloudShell State:", params.State)
+		if config.Debug == true {
+			fmt.Println("CloudShell State:", params.State)
+		}
+
+		fmt.Println("Starting your Cloud Shell machine...")
 
 		err = cloudshell_start(accessToken)
 
@@ -289,10 +384,38 @@ func call_cloud_shell(accessToken string) {
 			}
 
 			if params.State == "RUNNING" {
-				time.Sleep(500 * time.Millisecond)
-				break;
+				fmt.Println("Waiting for your Cloud Shell machine to start...")
+				// Increase waiting time
+				// time.Sleep(5000 * time.Millisecond)
+
+				break
 			}
 		}
+
+		// waiting
+		host := params.SshHost
+		port := fmt.Sprint(params.SshPort)
+
+		for x := 0; x < 120; x++ {
+			time.Sleep(1000 * time.Millisecond)
+
+			timeout := time.Second
+			conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+			if err != nil {
+				if config.Debug == true {
+					fmt.Println("Connecting error:", err)
+				}
+				continue
+			}
+			if conn != nil {
+				defer conn.Close()
+				if config.Debug == true {
+					fmt.Println("Opened", net.JoinHostPort(host, port))
+				}
+				break
+			}
+		}
+
 	}
 
 	if params.State != "RUNNING" {
@@ -300,11 +423,8 @@ func call_cloud_shell(accessToken string) {
 		return
 	}
 
-	if config.Command == CMD_PUTTY {
-		exec_putty(params)
-	}
-
 	if config.Command == CMD_WINSSH {
+		fmt.Println("Your Cloud Shell machine is RUNNING, connecting...")
 		exec_winssh(params)
 	}
 
@@ -322,5 +442,13 @@ func call_cloud_shell(accessToken string) {
 
 	if config.Command == CMD_UPLOAD {
 		sftp_upload(params)
+	}
+
+	if config.Command == CMD_PUTTY {
+		exec_putty(params)
+	}
+
+	if config.Command == CMD_WINSCP {
+		exec_winscp(params)
 	}
 }

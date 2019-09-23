@@ -3,15 +3,15 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
+
 	"github.com/kirinlabs/HttpRequest"
 	"golang.org/x/oauth2/google"
 )
@@ -31,32 +31,32 @@ type ClientSecrets struct {
 }
 
 type UserCredentials struct {
-	ClientID                string   `json:"client_id"`
-	ClientSecret            string   `json:"client_secret"`
-	RefreshToken            string   `json:"refresh_token"`
-	Scope            	string   `json:"scope"`
-	Type             	string   `json:"type"`
+	// ClientID     string `json:"client_id"`
+	// ClientSecret string `json:"client_secret"`
+	RefreshToken string `json:"refresh_token"`
+	// Scope        string `json:"scope"`
+	// Type string `json:"type"`
 	// The following two fields are option and exist after authentication
-	AccessToken		string   `json:"access_token"`
-	IDToken			string   `json:"id_token"`
-	Email			string	 `json:"email"`
-	ExpiresAt		int64	 `json:"expires_at"`
+	AccessToken string `json:"access_token"`
+	// IDToken     string `json:"id_token"`
+	// Email       string `json:"email"`
+	ExpiresAt int64 `json:"expires"`
 }
 
 type OAuthTokens struct {
-	AccessToken		string   `json:"access_token"`
-	ExpiresIn               int      `json:"expires_in"`
-	RefreshToken            string   `json:"refresh_token"`
-	Scope            	string   `json:"scope"`
-	TokenType            	string   `json:"token_type"`
-	IDToken			string   `json:"id_token"`
-	Error			string   `json:"error"`
-	ErrorDescription	string   `json:"error_description"`
+	AccessToken      string `json:"access_token"`
+	ExpiresIn        int    `json:"expires_in"`
+	RefreshToken     string `json:"refresh_token"`
+	Scope            string `json:"scope"`
+	TokenType        string `json:"token_type"`
+	IDToken          string `json:"id_token"`
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
 }
 
 func readCredentials(filename string) ([]byte, error) {
-	in, err := os.Open(filename)
 
+	in, err := os.Open(filename)
 	if err != nil {
 		return []byte(""), err
 	}
@@ -70,11 +70,19 @@ func readCredentials(filename string) ([]byte, error) {
 
 func loadClientSecrets(filename string) (ClientSecrets, error) {
 	var secrets ClientSecrets
+	var data []byte
+	var err error
 
-	data, err := readCredentials(filename)
+	if filename != "" {
+		data, err = readCredentials(filename)
 
-	if err != nil {
-		return secrets, err
+		if err != nil {
+			fmt.Println("Error: Cannot read credentials JSON file \""+filename+"\"", err)
+			os.Exit(1)
+		}
+	} else {
+		//
+		data, err = base64.StdEncoding.DecodeString("eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiNjU4OTM5NTQ0ODM3LXNtaHR1MG42N3A3MGdqM2o0Y2JtZGw2NmNma3RhcWx2LmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwicHJvamVjdF9pZCI6InhjbG91ZHNoZWxsIiwiYXV0aF91cmkiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20vby9vYXV0aDIvYXV0aCIsInRva2VuX3VyaSI6Imh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwiY2xpZW50X3NlY3JldCI6ImJEUEN4eTl3LTlac0ZoQ2hpX243Yk5ERyIsInJlZGlyZWN0X3VyaXMiOlsidXJuOmlldGY6d2c6b2F1dGg6Mi4wOm9vYiIsImh0dHA6Ly9sb2NhbGhvc3QiXX19")
 	}
 
 	// fmt.Println(string(data))
@@ -87,7 +95,7 @@ func loadClientSecrets(filename string) (ClientSecrets, error) {
 		return secrets, err
 	}
 
-	config.ProjectId = secrets.Installed.ProjectID
+	// config.ProjectId = secrets.Installed.ProjectID
 
 	// fmt.Println("ClientID:", secrets.Installed.ClientID)
 
@@ -119,7 +127,9 @@ func loadUserCredentials(filename string) (UserCredentials, error) {
 }
 
 func saveUserCredentials(filename string, creds UserCredentials) error {
-	fmt.Println("Save Credentials to:", filename)
+	if config.Debug == true {
+		fmt.Println("Save Credentials to:", filename)
+	}
 
 	j, err := json.MarshalIndent(creds, "", " ")
 
@@ -128,7 +138,7 @@ func saveUserCredentials(filename string, creds UserCredentials) error {
 		return err
 	}
 
-	// err = ioutil.WriteFile(filename + ".test", j, 0644)
+	// err = ioutil.WriteFile(filename+".test", j, 0644)
 	err = ioutil.WriteFile(filename, j, 0644)
 
 	if err != nil {
@@ -149,48 +159,25 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func debug_PrintUserCredentials(creds UserCredentials) {
-	fmt.Println("************************************************************")
-	fmt.Println("ClientID:", creds.ClientID)
-	fmt.Println("ClientSecret:", creds.ClientSecret)
-	fmt.Println("RefreshToken:", creds.RefreshToken)
-	fmt.Println("Scope:", creds.Scope)
-	fmt.Println("Type:", creds.Type)
-	fmt.Println("AccessToken:", creds.AccessToken)
-	fmt.Println("IDToken:", creds.IDToken)
-	fmt.Println("ExpiresAt:", creds.ExpiresAt)
-
-	fmt.Println("Expires At:", time.Unix(creds.ExpiresAt, 0))
-
-	var t time.Time = time.Unix(creds.ExpiresAt, 0)
-	var expires_in int64 = 0
-
-	if time.Now().Before(t) {
-		expires_in = int64(creds.ExpiresAt) - int64(time.Now().UTC().Unix())
-		fmt.Println("Expires In:", expires_in)
-	} else {
-		fmt.Println("Expires In: Expired")
-	}
-	fmt.Println("************************************************************")
-}
-
-func doRefresh(filename string) (string, string, bool) {
+func doRefresh(filename string) (string, bool) {
 	endpoint := "https://www.googleapis.com/oauth2/v4/token"
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
 
 	creds, err := loadUserCredentials(filename)
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", false
+		return "", false
 	}
-
-	// debug_PrintUserCredentials(creds)
 
 	// We want an access token that is good for a while.
 	// Brand new tokens are valid for 3600 seconds
 	// For testing require 15 minutes or 900 seconds
 
-	var t time.Time = time.Unix(creds.ExpiresAt - (15 * 60), 0)
+	var t time.Time = time.Unix(creds.ExpiresAt-(15*60), 0)
 	// fmt.Println(t)
 
 	// fmt.Println(time.Now())
@@ -200,15 +187,30 @@ func doRefresh(filename string) (string, string, bool) {
 			fmt.Println("Saved credentials (Access Token) have not expired")
 		}
 
-		return creds.AccessToken, creds.IDToken, true
+		return creds.AccessToken, true
 	}
 
 	if config.Debug == true {
 		fmt.Println("Must Refresh Token")
 	}
 
-	content := "client_id=" + creds.ClientID + "&"
-	content += "client_secret=" + creds.ClientSecret + "&"
+	//************************************************************
+	// Load the Google Client Secrets
+	//************************************************************
+
+	secrets, err := loadClientSecrets(config.ClientSecretsFile)
+
+	if err != nil {
+		fmt.Println(err)
+		return "", false
+	}
+
+	//************************************************************
+	// Build the authenticate URL
+	//************************************************************
+
+	content := "client_id=" + secrets.Installed.ClientID + "&"
+	content += "client_secret=" + secrets.Installed.ClientSecret + "&"
 	content += "grant_type=refresh_token&"
 	content += "refresh_token=" + creds.RefreshToken
 
@@ -220,14 +222,14 @@ func doRefresh(filename string) (string, string, bool) {
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", false
+		return "", false
 	}
 
 	body, err := res.Body()
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", false
+		return "", false
 	}
 
 	var tokens OAuthTokens
@@ -236,46 +238,41 @@ func doRefresh(filename string) (string, string, bool) {
 
 	if err != nil {
 		fmt.Println("Error: Cannot unmarshal JSON: ", err)
-		return "", "", false
+		return "", false
 	}
 
-	var expires_at int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
-
-/*
-	fmt.Println("AccessToken:", tokens.AccessToken)
-	fmt.Println("ExpiresIn:", tokens.ExpiresIn)
-	fmt.Println("ExpiresAt:", expires_at)
-	fmt.Println("Scope:", tokens.Scope)
-	fmt.Println("TokenType:", tokens.TokenType)
-	fmt.Println("IDToken:", tokens.IDToken)
-*/
+	var expires int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
 
 	creds.AccessToken = tokens.AccessToken
-	creds.IDToken = tokens.IDToken
-	creds.ExpiresAt = expires_at
+	// creds.IDToken = tokens.IDToken
+	creds.ExpiresAt = expires
 
-	email, err := get_email_address(tokens.AccessToken)
+	// email, err := get_email_address(tokens.AccessToken)
 
-	if err == nil {
-		if config.Debug == true {
-			fmt.Println("Email:", email)
-		}
+	// if err == nil {
+	// 	if config.Debug == true {
+	// 		fmt.Println("Email:", email)
+	// 	}
 
-		creds.Email = email
-	}
+	// 	creds.Email = email
+	// }
 
 	err = saveUserCredentials(filename, creds)
 
 	if err != nil {
 		fmt.Println("Error: Cannot save user credentials: ", err)
-		return "", "", false
+		return "", false
 	}
 
-	return creds.AccessToken, creds.IDToken, true
+	return creds.AccessToken, true
 }
 
 func debug_displayAccessToken(accessToken string) {
 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
+
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
+	}
 
 	req := HttpRequest.NewRequest()
 
@@ -295,37 +292,16 @@ func debug_displayAccessToken(accessToken string) {
 		return
 	}
 
+	fmt.Println("Token Info: ")
 	fmt.Println(string(body))
 }
 
 func debug_displayUserInfo(accessToken string) {
 	endpoint := "https://www.googleapis.com/oauth2/v3/userinfo"
 
-	req := HttpRequest.NewRequest()
-
-	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
-
-	res, err := req.Get(endpoint)
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
+	if config.UrlFetch != "" {
+		endpoint = config.UrlFetch + endpoint
 	}
-
-	body, err := res.Body()
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
-	}
-
-	fmt.Println(string(body))
-}
-
-func debug_displayIDToken(accessToken, idToken string) {
-	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
-
-	endpoint += "?id_token=" + idToken
 
 	req := HttpRequest.NewRequest()
 
@@ -348,64 +324,98 @@ func debug_displayIDToken(accessToken, idToken string) {
 	fmt.Println(string(body))
 }
 
-func get_email_address(accessToken string) (string, error) {
-	type Access_Token struct {
-		Azp		string   `json:"azp"`
-		Aud		string   `json:"aud"`
-		Sub		string   `json:"sub"`
-		Scope		string   `json:"scope"`
-		Exp		string   `json:"exp"`
-		Expires_in	string   `json:"expires_in"`
-		Email		string   `json:"email"`
-		Email_verified	string   `json:"email_verified"`
-		Access_type	string   `json:"access_type"`
-	}
+// func debug_displayIDToken(accessToken, idToken string) {
+// 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
-	//************************************************************
-	//
-	//************************************************************
+// 	endpoint += "?id_token=" + idToken
 
-	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
+// 	if config.UrlFetch != "" {
+// 		endpoint = config.UrlFetch + endpoint
+// 	}
 
-	req := HttpRequest.NewRequest()
+// 	req := HttpRequest.NewRequest()
 
-	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
+// 	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
 
-	//************************************************************
-	//
-	//************************************************************
+// 	res, err := req.Get(endpoint)
 
-	res, err := req.Get(endpoint)
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return
+// 	}
 
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return "", err
-	}
+// 	body, err := res.Body()
 
-	body, err := res.Body()
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return
+// 	}
 
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return "", err
-	}
+// 	fmt.Println(string(body))
+// }
 
-	//************************************************************
-	//
-	//************************************************************
+// func get_email_address(accessToken string) (string, error) {
+// 	type Access_Token struct {
+// 		Azp            string `json:"azp"`
+// 		Aud            string `json:"aud"`
+// 		Sub            string `json:"sub"`
+// 		Scope          string `json:"scope"`
+// 		Exp            string `json:"exp"`
+// 		Expires_in     string `json:"expires_in"`
+// 		Email          string `json:"email"`
+// 		Email_verified string `json:"email_verified"`
+// 		Access_type    string `json:"access_type"`
+// 	}
 
-	var tokens Access_Token
+// 	//************************************************************
+// 	//
+// 	//************************************************************
 
-	err = json.Unmarshal(body, &tokens)
+// 	endpoint := "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
-	if err != nil {
-		fmt.Println("Error: Cannot unmarshal JSON: ", err)
-		return "", err
-	}
+// 	if config.UrlFetch != "" {
+// 		endpoint = config.UrlFetch + endpoint
+// 	}
 
-	return tokens.Email, nil
-}
+// 	req := HttpRequest.NewRequest()
 
-func get_tokens() (string, string, error) {
+// 	req.SetHeaders(map[string]string{"Authorization": "Bearer " + accessToken})
+
+// 	//************************************************************
+// 	//
+// 	//************************************************************
+
+// 	res, err := req.Get(endpoint)
+
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return "", err
+// 	}
+
+// 	body, err := res.Body()
+
+// 	if err != nil {
+// 		fmt.Println("Error: ", err)
+// 		return "", err
+// 	}
+
+// 	//************************************************************
+// 	//
+// 	//************************************************************
+
+// 	var tokens Access_Token
+
+// 	err = json.Unmarshal(body, &tokens)
+
+// 	if err != nil {
+// 		fmt.Println("Error: Cannot unmarshal JSON: ", err)
+// 		return "", err
+// 	}
+
+// 	return tokens.Email, nil
+// }
+
+func get_tokens() (string, error) {
 	//************************************************************
 	// Note: Application Default Credentials only work on Compute
 	// Engine when interfacing with Cloud Shell.
@@ -415,16 +425,12 @@ func get_tokens() (string, string, error) {
 		return get_sa_tokens()
 	}
 
-	//************************************************************
-	//
-	//************************************************************
-
 	// fmt.Println("Auth:", config.Flags.Auth)
 	// fmt.Println("Login:", config.Flags.Login)
 
 	if config.Flags.Auth == false {
 		if fileExists(SavedUserCredentials) {
-			accessToken, idToken, valid := doRefresh(SavedUserCredentials)
+			accessToken, valid := doRefresh(SavedUserCredentials)
 
 			if valid == true {
 				// fmt.Println("Access Token: ", accessToken)
@@ -434,8 +440,7 @@ func get_tokens() (string, string, error) {
 				// debug_displayUserInfo(accessToken)
 				// debug_displayIDToken(accessToken, idToken)
 
-
-				return accessToken, idToken, nil
+				return accessToken, nil
 			}
 		}
 	}
@@ -448,23 +453,7 @@ func get_tokens() (string, string, error) {
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", err
-	}
-
-	//************************************************************
-	// If we are running under Linux and the program xdg-open
-	// is not present, then we probably are not running under
-	// a desktop. An example would be Windows Linux Subsystem (WSL)
-	//************************************************************
-
-	var flag_desktop bool = true
-
-	if isWindows() == false {
-		_, err := exec.LookPath("dxg-open")
-
-		if err != nil {
-			flag_desktop = false
-		}
+		return "", err
 	}
 
 	//************************************************************
@@ -480,166 +469,40 @@ func get_tokens() (string, string, error) {
 		url += "&login_hint=" + config.Flags.Login
 	}
 
-	if isWindows() == true {
-		url += "&redirect_uri=http://localhost:9000"
-	} else {
-		if flag_desktop == true {
-			url += "&redirect_uri=http://localhost:9000"
-		} else {
-			url += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+	url += "&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
 
-			return manualAuthentication(secrets, url)
-		}
-	}
+	token, err := manualAuthentication(secrets, url)
 
-	//************************************************************
-	// The following code requires Python
-	//************************************************************
+	// Wait for token to take effect
+	// time.Sleep(1000 * time.Millisecond)
 
-	python_path, err := exec.LookPath("python3")
-
-	if err != nil {
-		python_path, err = exec.LookPath("python")
-
-		if err != nil {
-			fmt.Println("Error: Cannot find the python program to launch the internal web server for authentication")
-			return "", "", err
-		}
-	}
-
-	if config.Debug == true {
-		fmt.Println("Python Path:", python_path)
-	}
-
-	//************************************************************
-
-	if isWindows() == true {
-		chrome, err := FindChromeBrowser()
-
-		var cmd *exec.Cmd
-
-		if err == nil {
-			cmd = exec.Command(chrome, url)
-
-			err = cmd.Start()
-		} else {
-			cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
-		}
-
-		err = cmd.Start()
-	} else {
-		// This requires that Linux has a desktop
-		err = exec.Command("xdg-open", url).Start()
-	}
-
-	if err != nil {
-		fmt.Println(err)
-		return "", "", err
-	}
-
-	fmt.Println("Chrome running")
-
-	//************************************************************
-	// Start the web server
-	//
-	// FIX: This is coded in Python.
-	//************************************************************
-
-	fmt.Println("Web server starting")
-
-	var out []byte
-
-	out, err = exec.Command(python_path, "webserver.py").Output()
-
-	if err != nil {
-		fmt.Println("Error: Web server failed to start")
-		fmt.Println(err)
-		return "", "", err
-	}
-
-	if len(out) == 0 {
-		fmt.Println("************************************************************")
-		fmt.Println(out)
-		log.Fatal("Error: Missing OAuth2 Code")
-	}
-
-	if config.Debug == true {
-		fmt.Println("OAuth2 Code:", string(out))
-	}
-
-	auth_code := string(out)
-
-	return processAuthCode(secrets, auth_code)
+	return token, err
 }
 
-func get_sa_tokens() (string, string, error) {
-	//************************************************************
-	//
-	//************************************************************
+func get_sa_tokens() (string, error) {
 
-	scope := "https://www.googleapis.com/auth/cloud-platform"
+	ctx := context.Background()
 
-	//************************************************************
-	//
-	//************************************************************
-
-       	ctx := context.Background()
-
-	//************************************************************
-	//
-	//************************************************************
-
-	creds, err := google.FindDefaultCredentials(ctx, scope)
+	creds, err := google.FindDefaultCredentials(ctx, SCOPE)
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", err
+		return "", err
 	}
-
-	//************************************************************
-	//
-	//************************************************************
 
 	token, err := creds.TokenSource.Token()
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", err
+		return "", err
 	}
 
-	//************************************************************
-	//
-	//************************************************************
-
-	return token.AccessToken, "", nil
+	return token.AccessToken, nil
 }
 
-func FindChromeBrowser() (string, error) {
-	// Web browser to launch to authenticate
-	// This path is valid for Windows x64 only
-	// FIX - Test for Windows x86
-	var chrome1 = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-	var chrome2 = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+func manualAuthentication(secrets ClientSecrets, url string) (string, error) {
 
-	if fileExists(chrome1) {
-		return chrome1, nil
-	}
-
-	if fileExists(chrome2) {
-		return chrome2, nil
-	}
-
-	err := errors.New("Cannot find Google Chrome Browser")
-
-	return "", err
-}
-
-func manualAuthentication(secrets ClientSecrets, url string) (string, string, error) {
-	fmt.Println("Go to the following link in your browser:")
-	fmt.Println()
-	fmt.Println(url)
-	fmt.Println()
-	fmt.Print("Enter verification code: ")
+	fmt.Print("Go to the following link in your browser:\n\n" + url + "\n\nEnter verification code: ")
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -650,7 +513,7 @@ func manualAuthentication(secrets ClientSecrets, url string) (string, string, er
 	return processAuthCode(secrets, auth_code)
 }
 
-func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, error) {
+func processAuthCode(secrets ClientSecrets, auth_code string) (string, error) {
 	//************************************************************
 	content := "client_id=" + secrets.Installed.ClientID
 	content += "&client_secret=" + secrets.Installed.ClientSecret
@@ -669,14 +532,14 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	body, err := res.Body()
 
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	if config.Debug == true {
@@ -693,7 +556,7 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if err != nil {
 		fmt.Println("Error: Cannot unmarshal JSON: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	if config.Debug == true {
@@ -704,39 +567,39 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 		fmt.Println("Error: Cannot authenticate")
 		fmt.Println(tokens.Error)
 		fmt.Println(tokens.ErrorDescription)
-		return "", "", errors.New(tokens.ErrorDescription)
+		return "", errors.New(tokens.ErrorDescription)
 	}
 
 	//************************************************************
 	//
 	//************************************************************
 
-	var expires_at int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
+	var expires int64 = int64(time.Now().UTC().Unix()) + int64(tokens.ExpiresIn)
 
 	var creds UserCredentials
 
-	creds.ClientID = secrets.Installed.ClientID
-	creds.ClientSecret = secrets.Installed.ClientSecret
+	// creds.ClientID = secrets.Installed.ClientID
+	// creds.ClientSecret = secrets.Installed.ClientSecret
 
 	creds.RefreshToken = tokens.RefreshToken
-	creds.Scope = tokens.Scope
-	creds.Type = tokens.TokenType
+	// creds.Scope = tokens.Scope
+	// creds.Type = tokens.TokenType
 
 	creds.AccessToken = tokens.AccessToken
-	creds.IDToken = tokens.IDToken
-	creds.ExpiresAt = expires_at
+	// creds.IDToken = tokens.IDToken
+	creds.ExpiresAt = expires
 
 	//************************************************************
 	//
 	//************************************************************
 
-	email, err := get_email_address(creds.AccessToken)
+	// email, err := get_email_address(creds.AccessToken)
 
-	if err == nil {
-		fmt.Println("Email:", email)
+	// if err == nil {
+	// 	fmt.Println("Email:", email)
 
-		creds.Email = email
-	}
+	// 	creds.Email = email
+	// }
 
 	//************************************************************
 	//
@@ -746,7 +609,7 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if err != nil {
 		fmt.Println("Error: Cannot save user credentials: ", err)
-		return "", "", err
+		return "", err
 	}
 
 	//************************************************************
@@ -755,9 +618,9 @@ func processAuthCode(secrets ClientSecrets, auth_code string) (string, string, e
 
 	if config.Debug == true {
 		debug_displayAccessToken(creds.AccessToken)
-		debug_displayUserInfo(creds.AccessToken)
-		debug_displayIDToken(creds.AccessToken, creds.IDToken)
+		// debug_displayUserInfo(creds.AccessToken)
+		// debug_displayIDToken(creds.AccessToken, creds.IDToken)
 	}
 
-	return creds.AccessToken, creds.IDToken, nil
+	return creds.AccessToken, nil
 }
