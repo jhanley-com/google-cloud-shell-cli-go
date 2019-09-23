@@ -304,6 +304,10 @@ func call_cloud_shell(accessToken string) {
 		exec_putty(params)
 	}
 
+	if config.Command == CMD_INLINE_SSH {
+		exec_inline_ssh(params)
+	}
+
 	if config.Command == CMD_WINSSH {
 		exec_winssh(params)
 	}

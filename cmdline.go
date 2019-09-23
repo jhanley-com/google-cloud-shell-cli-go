@@ -12,8 +12,9 @@ import (
 const (
 	CMD_INFO = iota
 	CMD_PUTTY
-	CMD_WINSSH
 	CMD_SSH
+	CMD_INLINE_SSH
+	CMD_WINSSH
 	CMD_EXEC
 	CMD_UPLOAD
 	CMD_DOWNLOAD
@@ -110,9 +111,17 @@ func process_cmdline() {
 
 		case "ssh":
 			if isWindows() == true {
-				config.Command = CMD_WINSSH
+				config.Command = CMD_INLINE_SSH
 			} else {
 				config.Command = CMD_SSH
+			}
+
+		case "winssh":
+			if isWindows() == true {
+				config.Command = CMD_WINSSH
+			} else {
+				fmt.Println("Error: This command is only supported on Windows. For Linux use ssh")
+				os.Exit(1)
 			}
 
 		case "exec":
@@ -201,6 +210,7 @@ func cmd_help() {
 		fmt.Println("  cloudshell putty                      - connect to Cloud Shell with Putty")
 	}
 	fmt.Println("  cloudshell ssh                        - connect to Cloud Shell with SSH")
+	fmt.Println("  cloudshell winssh                     - connect to Cloud Shell with Windows OpenSSH")
 	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
 	fmt.Println("  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell")
 	fmt.Println("  cloudshell download src_file dst_file - Download from Cloud Shell to local file")
