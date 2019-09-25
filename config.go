@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type ConfigJson struct {
 	ClientSecretsFile	string   `json:"client_secrets_file"`
+	WinscpFlags       	string   `json:"winscp_flags"`
+
 }
 
 // Global Flags
@@ -44,6 +47,9 @@ type Config struct {
 
 	// Commands "benchmark download" and "benchark upload"
 	benchmark_size		int64
+
+	// Command line winscp options
+	WinscpFlags []string
 }
 
 var config Config
@@ -72,6 +78,10 @@ func init_config() error {
 	config.ClientSecretsFile = configJson.ClientSecretsFile
 
 	// fmt.Println("Client Secrets File:", config.ClientSecretsFile)
+
+	if configJson.WinscpFlags != "" {
+		config.WinscpFlags = append([]string{"/rawsettings"}, strings.Fields(configJson.WinscpFlags)...)
+	}
 
 	process_cmdline()
 

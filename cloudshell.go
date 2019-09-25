@@ -34,7 +34,7 @@ type CloudShellEnv struct {
 	State                string   `json:"state"`
 	SshUsername          string   `json:"sshUsername"`
 	SshHost              string   `json:"sshHost"`
-	SshPort              int32   `json:"sshPort"`
+	SshPort              int32    `json:"sshPort"`
 	Error struct {
 		Code              int32   `json:"code"`
 		Message           string  `json:"message"`
@@ -59,9 +59,17 @@ func cloud_shell_get_environment(accessToken string, flag_info bool) (CloudShell
 
 	req := HttpRequest.NewRequest()
 
-	req.SetHeaders(map[string]string{
+	hdrs := map[string]string {
 			"Authorization": "Bearer " + accessToken,
-			"X-Goog-User-Project": config.ProjectId})
+			"X-Goog-User-Project": config.ProjectId,
+	}
+
+	req.SetHeaders(hdrs)
+
+	if config.Debug == true {
+		fmt.Println("Access Token:", accessToken)
+		fmt.Println("ProjectId:", config.ProjectId)
+	}
 
 	//************************************************************
 	//
@@ -115,7 +123,7 @@ func cloudshell_start(accessToken string) error {
 	//************************************************************
 
 	if config.Debug == true {
-		fmt.Println("Starting Cloud Shell")
+		fmt.Println("Request users.environment.start")
 	}
 
 	endpoint := "https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default"
@@ -124,12 +132,12 @@ func cloudshell_start(accessToken string) error {
 
 	req := HttpRequest.NewRequest()
 
-	// req.Header.Set("Authorization", "Bearer " + accessToken)
-	// req.Header.Set("X-Goog-User-Project", config.ProjectId)
-
-	req.SetHeaders(map[string]string{
+	hdrs := map[string]string {
 			"Authorization": "Bearer " + accessToken,
-			"X-Goog-User-Project": config.ProjectId})
+			"X-Goog-User-Project": config.ProjectId,
+	}
+
+	req.SetHeaders(hdrs)
 
 	//************************************************************
 	//
@@ -168,6 +176,7 @@ func cloudshell_start(accessToken string) error {
 
 	if params.Error.Code != 0 {
 		err = errors.New(params.Error.Message)
+		fmt.Println("Error Code:", params.Error.Code)
 		fmt.Println(err)
 		return err
 	}
@@ -334,5 +343,13 @@ func call_cloud_shell(accessToken string) {
 
 	if config.Command == CMD_BENCHMARK_UPLOAD {
 		sftp_benchmark_upload(params)
+	}
+
+	if config.Command == CMD_BITVISE {
+		exec_bitvise(params)
+	}
+
+	if config.Command == CMD_WINSCP {
+		exec_winscp(params)
 	}
 }

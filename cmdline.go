@@ -19,6 +19,8 @@ const (
 	CMD_EXEC
 	CMD_UPLOAD
 	CMD_DOWNLOAD
+	CMD_BITVISE
+	CMD_WINSCP
 	CMD_BENCHMARK_DOWNLOAD
 	CMD_BENCHMARK_UPLOAD
 )
@@ -92,6 +94,13 @@ func process_cmdline() {
 			continue
 		}
 
+		// WINSCP args
+		if strings.HasPrefix(arg, "/rawsettings") {
+			// config.sshFlags = append(config.sshFlags, os.Args[x:]...)
+			config.WinscpFlags = os.Args[x:]
+			break
+		}
+
 		if strings.HasPrefix(arg, "-") {
 			fmt.Println("Error: Unknown option: " + arg)
 			os.Exit(1)
@@ -129,6 +138,22 @@ func process_cmdline() {
 				config.Command = CMD_INLINE_SSH
 			} else {
 				config.Command = CMD_SSH
+			}
+
+		case "bitvise":
+			if isWindows() == true {
+				config.Command = CMD_BITVISE
+			} else {
+				fmt.Println("Error: This command is only supported on Windows. For Linux use ssh")
+				os.Exit(1)
+			}
+
+		case "winscp":
+			if isWindows() == true {
+				config.Command = CMD_WINSCP
+			} else {
+				fmt.Println("Error: This command is only supported on Windows. For Linux use ssh")
+				os.Exit(1)
 			}
 
 		case "winssh":
