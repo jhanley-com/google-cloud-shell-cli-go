@@ -23,6 +23,8 @@ Usage: cloudshell [command]
   cloudshell putty                      - connect to Cloud Shell with Putty
   cloudshell ssh                        - connect to Cloud Shell with SSH
   cloudshell winssh                     - connect to Cloud Shell with Windows OpenSSH
+  cloudshell winscp                     - connect to Cloud Shell with Windows WinSCP
+  cloudshell bitvise                    - connect to Cloud Shell with Windows Bitvise
   cloudshell exec "command"             - Execute remote command on Cloud Shell
   cloudshell upload src_file dst_file   - Upload local file to Cloud Shell
   cloudshell download src_file dst_file - Download from Cloud Shell to local file

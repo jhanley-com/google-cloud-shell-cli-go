@@ -281,6 +281,8 @@ func cmd_help() {
 	}
 	fmt.Println("  cloudshell ssh                        - connect to Cloud Shell with SSH")
 	fmt.Println("  cloudshell winssh                     - connect to Cloud Shell with Windows OpenSSH")
+	fmt.Println("  cloudshell winscp                     - connect to Cloud Shell with Windows WinSCP")
+	fmt.Println("  cloudshell bitvise                    - connect to Cloud Shell with Windows Bitvise")
 	fmt.Println("  cloudshell exec \"command\"             - Execute remote command on Cloud Shell")
 	fmt.Println("  cloudshell upload src_file dst_file   - Upload local file to Cloud Shell")
 	fmt.Println("  cloudshell download src_file dst_file - Download from Cloud Shell to local file")
